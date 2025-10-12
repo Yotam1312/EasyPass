@@ -1,0 +1,6 @@
+@EasyPass.API_HostAddress = http://localhost:5023
+
+GET {{EasyPass.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
