@@ -33,7 +33,7 @@ public partial class LoginPage : ContentPage
             var loginRequest = new { Username = username, Pin = pin };
 
             // Send login request to the API
-            var response = await _httpClient.PostAsJsonAsync("http://localhost:5023/api/auth/login", loginRequest);
+            var response = await _httpClient.PostAsJsonAsync("https://easypass-api-plg8.onrender.com/api/auth/login", loginRequest);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -62,10 +62,47 @@ public partial class LoginPage : ContentPage
         {
             await DisplayAlert("Error", $"Something went wrong: {ex.Message}", "OK");
         }
+
     }
+    private async void OnRegisterClicked(object sender, EventArgs e)
+    {
+        string username = await DisplayPromptAsync("Register", "Enter a username:");
+        if (string.IsNullOrWhiteSpace(username))
+            return;
+
+        string pin = await DisplayPromptAsync("Register", "Enter a digit PIN:");
+        if (string.IsNullOrWhiteSpace(pin))
+            return;
+
+        try
+        {
+            var registerRequest = new { Username = username, Pin = pin };
+
+            using var client = new HttpClient();
+            var response = await client.PostAsJsonAsync(
+                "https://easypass-api-plg8.onrender.com/api/auth/register",
+                registerRequest);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await DisplayAlert("Success", "Account created successfully! You can now log in.", "OK");
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                await DisplayAlert("Error", $"Registration failed: {error}", "OK");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Something went wrong: {ex.Message}", "OK");
+        }
+    }
+
 
     private class LoginResponse
     {
         public string Token { get; set; } = string.Empty;
     }
 }
+    

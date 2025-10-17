@@ -33,7 +33,7 @@ public partial class PasswordsPage : ContentPage
             }
 
             using var client = new HttpClient();
-            client.BaseAddress = new Uri("http://localhost:5023/api/");
+            client.BaseAddress = new Uri("https://easypass-api-plg8.onrender.com/api/");
             client.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
@@ -74,7 +74,7 @@ public partial class PasswordsPage : ContentPage
                 try
                 {
                     using var client = new HttpClient();
-                    var generated = await client.GetFromJsonAsync<PasswordResponse>("http://localhost:5023/api/Utils/generate-password");
+                    var generated = await client.GetFromJsonAsync<PasswordResponse>("https://easypass-api-plg8.onrender.com/api/Utils/generate-password");
                     password = generated?.Password ?? string.Empty;
                 }
                 catch (Exception ex)
@@ -103,7 +103,7 @@ public partial class PasswordsPage : ContentPage
                 }
 
                 using var client = new HttpClient();
-                client.BaseAddress = new Uri("http://localhost:5023/api/");
+                client.BaseAddress = new Uri("https://easypass-api-plg8.onrender.com/api/");
                 client.DefaultRequestHeaders.Authorization =
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
@@ -162,7 +162,7 @@ public partial class PasswordsPage : ContentPage
         try
         {
             using var client = new HttpClient();
-            var generated = await client.GetFromJsonAsync<PasswordResponse>("http://localhost:5023/api/Utils/generate-password");
+            var generated = await client.GetFromJsonAsync<PasswordResponse>("https://easypass-api-plg8.onrender.com/api/Utils/generate-password");
             await DisplayAlert("Strong Password Generated", generated!.Password, "Copy");
         }
         catch (Exception ex)
@@ -190,7 +190,7 @@ public partial class PasswordsPage : ContentPage
             }
 
             using var client = new HttpClient();
-            client.BaseAddress = new Uri("http://localhost:5023/api/");
+            client.BaseAddress = new Uri("https://easypass-api-plg8.onrender.com/api/");
             client.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
@@ -244,7 +244,7 @@ public partial class PasswordsPage : ContentPage
             }
 
             using var client = new HttpClient();
-            client.BaseAddress = new Uri("http://localhost:5023/api/");
+            client.BaseAddress = new Uri("https://easypass-api-plg8.onrender.com/api/");
             client.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
