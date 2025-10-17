@@ -5,14 +5,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton<PasswordGeneratorService>();
 
-// Configure EF Core with SQLite
+// Database configuration - switch to PostgreSQL for deployment on Render
 builder.Services.AddDbContext<EasyPassContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<JwtService>();
@@ -20,7 +22,7 @@ builder.Services.AddScoped<JwtService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Swagger setup
+// Swagger configuration for API documentation and JWT testing
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
@@ -29,7 +31,7 @@ builder.Services.AddSwaggerGen(options =>
         Version = "v1"
     });
 
-    // Add JWT authentication support in Swagger UI
+    // Add JWT authentication support inside Swagger UI
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -56,7 +58,7 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// JWT configuration
+// JWT configuration for token validation and authentication
 var jwtSection = builder.Configuration.GetSection("Jwt");
 var jwtKey = jwtSection["Key"]!;
 var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
@@ -77,7 +79,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
-// Enable Swagger only in development
+// Enable Swagger UI in development mode only
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -89,6 +91,7 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Map API controllers
 app.MapControllers();
 
 app.Run();
