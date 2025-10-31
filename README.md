@@ -7,23 +7,27 @@ A simple, secure, and accessible password manager built with .NET.
 
 The goal : help people securely store and manage their passwords without confusion or technical barriers.
 
-Built as a cross-platform app using .NET MAUI with a .NET 9 Web API backend (hosted on Render) and a PostgreSQL cloud database,
+Built as a cross-platform app using .NET MAUI with a .NET 9 Web API backend (hosted on Render) and a local SQLite cloud database,
 EasyPass combines a clean UI with secure authentication, reliable data management, and modern deployment using Docker containers.
 ## Project Status 🚀
 
-* The project is now fully live and deployed.
-* All core functionality (registration, login with PIN, password management, and CRUD operations) is working and connected to a real cloud-based PostgreSQL database.
-* The API runs as a Dockerized container on Render, ensuring scalability and consistent performance across environments.
+* The project backend is fully functional and Dockerized.
+* Android app successfully tested with the live API hosted on Render.
+* AES-256 encryption for stored passwords is implemented.
+* All core functionality (registration, login with PIN, password management, and CRUD operations) is working with a live connection.
+
 
 🧱 Planned Features
 
-🔒 Full AES-256 encryption for stored passwords
+⚡ Performance optimization for faster login and registration  
 
-👆 Login via fingerprint or facial recognition
+👆 “Remember Me” and biometric login (fingerprint / Face ID)  
 
 🎨 Complete UI/UX redesign for improved accessibility
 
-📱 Android .apk build and future iOS support
+📱 iOS version and further Android polish
+
+ **And more to come**
 
 ## Key Features
 🧍‍♂️ User registration & login with secure PIN authentication
@@ -58,7 +62,7 @@ Languages: C#
 
 Frameworks: .NET MAUI, ASP.NET Core 9.0, Entity Framework Core
 
-Database: PostgreSQL (Render Cloud)
+Database: Local SQLite
 
 Auth: JWT Tokens
 
@@ -68,13 +72,14 @@ Tools: Visual Studio 2022, Git, GitHub
 
 
 ## Security Notes
-* User PINs are hashed and salted before storage.
+* User PINs are hashed and salted using BCrypt.
+  
+* All communication between the app and API is secured with JWT tokens.
+  
+* Passwords are encrypted with **AES-256 (CBC mode)** using SHA-256–derived keys and random IVs.
+  
+* Database connection to Render is secured with SSL.
 
-* All communication between the app and API is secured using JWT tokens.
-
-* The database connection is fully SSL-encrypted.
-
-* AES-256 encryption for password data is planned for the next release.
 ## Motivation
 
 Password managers are often over-engineered for nontechnical users.
