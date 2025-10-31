@@ -4,16 +4,82 @@ using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Storage;
+using EasyPass.App.Services;
+using System.Diagnostics;
 
 namespace EasyPass.App.Views;
 
 public partial class LoginPage : ContentPage
 {
-    private readonly HttpClient _httpClient = new();
+    private readonly HttpClient _httpClient;
+    private readonly AuthenticationService _authService;
+    private bool _isBiometricAvailable;
 
     public LoginPage()
     {
         InitializeComponent();
+        _authService = new AuthenticationService();
+        _httpClient = new HttpClient(new AuthenticationHandler())
+        {
+            BaseAddress = new Uri("https://easypass-api-plg8.onrender.com/")
+        };
+        
+        // Check for stored credentials and biometric availability
+        CheckAuthenticationStateAsync();
+    }
+
+    private async void CheckAuthenticationStateAsync()
+    {
+        try
+        {
+            _isBiometricAvailable = await _authService.IsBiometricAvailableAsync();
+            var hasToken = await _authService.HasValidTokenAsync();
+
+            if (hasToken && _isBiometricAvailable)
+            {
+                BiometricLoginButton.IsVisible = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error checking auth state: {ex.Message}");
+            BiometricLoginButton.IsVisible = false;
+        }
+    }
+
+    private async void OnBiometricLoginClicked(object sender, EventArgs e)
+    {
+        if (!_isBiometricAvailable)
+        {
+            await DisplayAlert("Error", "Biometric authentication is not available", "OK");
+            return;
+        }
+
+        try
+        {
+            var isAuthenticated = await _authService.AuthenticateWithBiometricsAsync();
+            if (!isAuthenticated)
+            {
+                await DisplayAlert("Authentication Failed", "Biometric authentication failed", "OK");
+                return;
+            }
+
+            var token = await _authService.GetStoredTokenAsync();
+            if (string.IsNullOrEmpty(token))
+            {
+                await DisplayAlert("Error", "No stored credentials found", "OK");
+                return;
+            }
+
+            // Configure client and navigate
+            AuthenticationService.ConfigureHttpClient(_httpClient, token);
+            await Navigation.PushAsync(new PasswordsPage());
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", 
+                $"Biometric authentication error: {ex.Message}", "OK");
+        }
     }
 
     // Handles login button click and sends credentials to the API
@@ -31,9 +97,7 @@ public partial class LoginPage : ContentPage
         try
         {
             var loginRequest = new { Username = username, Pin = pin };
-
-            // Send login request to the API
-            var response = await _httpClient.PostAsJsonAsync("https://easypass-api-plg8.onrender.com/api/auth/login", loginRequest);
+            var response = await _httpClient.PostAsJsonAsync("api/auth/login", loginRequest);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -41,26 +105,23 @@ public partial class LoginPage : ContentPage
                 return;
             }
 
-            // Read JWT token from the response
             var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-
             if (result?.Token == null)
             {
                 await DisplayAlert("Error", "Failed to receive token.", "OK");
                 return;
             }
 
-            // Save the token securely
-            await SecureStorage.Default.SetAsync("jwt_token", result.Token);
+            // Store token securely
+            await _authService.StoreTokenAsync(result.Token);
+            AuthenticationService.ConfigureHttpClient(_httpClient, result.Token);
 
             await DisplayAlert("Success", "Logged in successfully!", "OK");
-
-            // Navigate to the passwords page after successful login
             await Navigation.PushAsync(new PasswordsPage());
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Something went wrong: {ex.Message}", "OK");
+            await DisplayAlert("Error", $"Login failed: {ex.Message}", "OK");
         }
 
     }
@@ -77,15 +138,13 @@ public partial class LoginPage : ContentPage
         try
         {
             var registerRequest = new { Username = username, Pin = pin };
-
-            using var client = new HttpClient();
-            var response = await client.PostAsJsonAsync(
-                "https://easypass-api-plg8.onrender.com/api/auth/register",
-                registerRequest);
+            var response = await _httpClient.PostAsJsonAsync(
+                "api/auth/register", registerRequest);
 
             if (response.IsSuccessStatusCode)
             {
-                await DisplayAlert("Success", "Account created successfully! You can now log in.", "OK");
+                await DisplayAlert("Success", 
+                    "Account created successfully! You can now log in.", "OK");
             }
             else
             {
@@ -95,7 +154,7 @@ public partial class LoginPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Something went wrong: {ex.Message}", "OK");
+            await DisplayAlert("Error", $"Registration failed: {ex.Message}", "OK");
         }
     }
 
@@ -103,6 +162,6 @@ public partial class LoginPage : ContentPage
     private class LoginResponse
     {
         public string Token { get; set; } = string.Empty;
+        public DateTime Expiration { get; set; }
     }
 }
-    

@@ -7,17 +7,50 @@ using System.Threading.Tasks;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Storage;
 using EasyPass.App.Models;
+using EasyPass.App.Services;
 
 namespace EasyPass.App.Views;
 
 public partial class PasswordsPage : ContentPage
 {
+    private readonly HttpClient _client;
+    private readonly AuthenticationService _authService;
     private List<PasswordEntry> _allPasswords = new();
+    private IDispatcherTimer? _toastTimer;
 
     public PasswordsPage()
     {
         InitializeComponent();
-        _ = LoadPasswords();
+        _authService = new AuthenticationService();
+        _client = new HttpClient(new AuthenticationHandler())
+        {
+            BaseAddress = new Uri("https://easypass-api-plg8.onrender.com/api/")
+        };
+        
+        CheckAuthAndLoadPasswords();
+    }
+
+    private async void CheckAuthAndLoadPasswords()
+    {
+        try
+        {
+            if (await _authService.IsBiometricAvailableAsync())
+            {
+                var isAuthenticated = await _authService.AuthenticateWithBiometricsAsync();
+                if (!isAuthenticated)
+                {
+                    await Navigation.PopAsync();
+                    return;
+                }
+            }
+
+            await LoadPasswords();
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Authentication failed: {ex.Message}", "OK");
+            await Navigation.PopAsync();
+        }
     }
 
     // Loads all passwords for the authenticated user
@@ -25,19 +58,15 @@ public partial class PasswordsPage : ContentPage
     {
         try
         {
-            var token = await SecureStorage.Default.GetAsync("jwt_token");
+            var token = await _authService.GetStoredTokenAsync();
             if (string.IsNullOrEmpty(token))
             {
                 await DisplayAlert("Error", "User is not authenticated.", "OK");
+                await Navigation.PopAsync();
                 return;
             }
 
-            using var client = new HttpClient();
-            client.BaseAddress = new Uri("https://easypass-api-plg8.onrender.com/api/");
-            client.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-            var passwords = await client.GetFromJsonAsync<List<PasswordEntry>>("Passwords");
+            var passwords = await _client.GetFromJsonAsync<List<PasswordEntry>>("Passwords");
             _allPasswords = passwords ?? new List<PasswordEntry>();
             PasswordsList.ItemsSource = _allPasswords;
         }
@@ -73,8 +102,7 @@ public partial class PasswordsPage : ContentPage
             {
                 try
                 {
-                    using var client = new HttpClient();
-                    var generated = await client.GetFromJsonAsync<PasswordResponse>("https://easypass-api-plg8.onrender.com/api/Utils/generate-password");
+                    var generated = await _client.GetFromJsonAsync<PasswordResponse>("Utils/generate-password");
                     password = generated?.Password ?? string.Empty;
                 }
                 catch (Exception ex)
@@ -95,18 +123,6 @@ public partial class PasswordsPage : ContentPage
 
             try
             {
-                var token = await SecureStorage.Default.GetAsync("jwt_token");
-                if (string.IsNullOrEmpty(token))
-                {
-                    await DisplayAlert("Error", "User is not authenticated.", "OK");
-                    return;
-                }
-
-                using var client = new HttpClient();
-                client.BaseAddress = new Uri("https://easypass-api-plg8.onrender.com/api/");
-                client.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
                 var newPassword = new PasswordEntry
                 {
                     Service = service,
@@ -114,7 +130,7 @@ public partial class PasswordsPage : ContentPage
                     EncryptedPassword = password
                 };
 
-                var response = await client.PostAsJsonAsync("Passwords", newPassword);
+                var response = await _client.PostAsJsonAsync("Passwords", newPassword);
                 if (response.IsSuccessStatusCode)
                 {
                     await DisplayAlert("Success", "Password saved!", "OK");
@@ -161,9 +177,8 @@ public partial class PasswordsPage : ContentPage
     {
         try
         {
-            using var client = new HttpClient();
-            var generated = await client.GetFromJsonAsync<PasswordResponse>("https://easypass-api-plg8.onrender.com/api/Utils/generate-password");
-            await DisplayAlert("Strong Password Generated", generated!.Password, "Copy");
+            var generated = await _client.GetFromJsonAsync<PasswordResponse>("Utils/generate-password");
+            await DisplayAlert("Strong Password Generated", generated?.Password ?? "", "Copy");
         }
         catch (Exception ex)
         {
@@ -177,27 +192,24 @@ public partial class PasswordsPage : ContentPage
         var button = (Button)sender;
         var id = (int)button.CommandParameter;
 
-        bool confirm = await DisplayAlert("Confirm Delete", "Are you sure you want to delete this password?", "Yes", "No");
+        // Find the password entry for a more informative confirmation message
+        var entry = _allPasswords.FirstOrDefault(p => p.Id == id);
+        if (entry == null) return;
+
+        bool confirm = await DisplayAlert(
+            "Delete Password",
+            $"Are you sure you want to delete the password for {entry.Service}?\n\nThis action cannot be undone.",
+            "Delete",
+            "Cancel");
+
         if (!confirm) return;
 
         try
         {
-            var token = await SecureStorage.Default.GetAsync("jwt_token");
-            if (string.IsNullOrEmpty(token))
-            {
-                await DisplayAlert("Error", "User is not authenticated.", "OK");
-                return;
-            }
-
-            using var client = new HttpClient();
-            client.BaseAddress = new Uri("https://easypass-api-plg8.onrender.com/api/");
-            client.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-            var response = await client.DeleteAsync($"Passwords/{id}");
+            var response = await _client.DeleteAsync($"Passwords/{id}");
             if (response.IsSuccessStatusCode)
             {
-                await DisplayAlert("Deleted", "Password deleted successfully!", "OK");
+                ShowToast("Password deleted successfully");
                 await LoadPasswords();
             }
             else
@@ -236,18 +248,6 @@ public partial class PasswordsPage : ContentPage
 
         try
         {
-            var token = await SecureStorage.Default.GetAsync("jwt_token");
-            if (string.IsNullOrEmpty(token))
-            {
-                await DisplayAlert("Error", "User is not authenticated.", "OK");
-                return;
-            }
-
-            using var client = new HttpClient();
-            client.BaseAddress = new Uri("https://easypass-api-plg8.onrender.com/api/");
-            client.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
             var updatedEntry = new PasswordEntry
             {
                 Id = passwordEntry.Id,
@@ -257,7 +257,7 @@ public partial class PasswordsPage : ContentPage
                 UserId = passwordEntry.UserId
             };
 
-            var response = await client.PutAsJsonAsync($"Passwords/{passwordEntry.Id}", updatedEntry);
+            var response = await _client.PutAsJsonAsync($"Passwords/{passwordEntry.Id}", updatedEntry);
             if (response.IsSuccessStatusCode)
             {
                 await DisplayAlert("Success", "Password updated!", "OK");
@@ -272,6 +272,65 @@ public partial class PasswordsPage : ContentPage
         catch (Exception ex)
         {
             await DisplayAlert("Error", $"Failed to update password: {ex.Message}", "OK");
+        }
+    }
+
+    private async void OnCopyPasswordClicked(object sender, EventArgs e)
+    {
+        try
+        {
+            var button = (Button)sender;
+            var passwordEntry = (PasswordEntry)button.CommandParameter;
+
+            await Clipboard.SetTextAsync(passwordEntry.EncryptedPassword);
+            ShowToast("Password copied to clipboard");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", "Failed to copy password", "OK");
+        }
+    }
+
+    private void ShowToast(string message)
+    {
+        // Create and show the toast message
+        var toast = new Label
+        {
+            Text = message,
+            TextColor = Colors.White,
+            BackgroundColor = Colors.DarkGray,
+            HorizontalTextAlignment = TextAlignment.Center,
+            VerticalTextAlignment = TextAlignment.Center,
+            Padding = new Thickness(16),
+            FontSize = 16,
+            Opacity = 0
+        };
+
+        // Add the toast to the page
+        var mainGrid = (Grid)Content;
+        mainGrid.Add(toast);
+        toast.SetValue(Grid.RowSpanProperty, 2); // Span both rows
+
+        // Center the toast
+        toast.VerticalOptions = LayoutOptions.End;
+        toast.Margin = new Thickness(32, 0, 32, 32);
+
+        // Animate the toast
+        toast.FadeTo(1, 200);
+
+        // Set up timer to remove the toast
+        _toastTimer?.Stop();
+        _toastTimer = Application.Current?.Dispatcher.CreateTimer();
+        if (_toastTimer != null)
+        {
+            _toastTimer.Interval = TimeSpan.FromSeconds(2);
+            _toastTimer.Tick += async (s, e) =>
+            {
+                await toast.FadeTo(0, 200);
+                mainGrid.Remove(toast);
+                _toastTimer.Stop();
+            };
+            _toastTimer.Start();
         }
     }
 

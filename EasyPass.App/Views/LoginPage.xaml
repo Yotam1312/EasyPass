@@ -32,6 +32,15 @@
         CornerRadius="10"
         HeightRequest="50" />
 
+        <Button x:Name="BiometricLoginButton"
+                Text="Login with Biometrics"
+                Clicked="OnBiometricLoginClicked"
+                BackgroundColor="#4B24D4"
+                TextColor="White"
+                IsVisible="False"
+                CornerRadius="10"
+                HeightRequest="50" />
+        
         <Button Text="Register"
         Clicked="OnRegisterClicked"
         BackgroundColor="#4DA6FF"

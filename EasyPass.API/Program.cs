@@ -11,6 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton<PasswordGeneratorService>();
+builder.Services.AddSingleton<EncryptionHelper>();
 
 // Database configuration - switch to PostgreSQL for deployment on Render
 builder.Services.AddDbContext<EasyPassContext>(options =>

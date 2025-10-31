@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using EasyPass.API.Data;
 using EasyPass.API.Models;
 using System.Security.Claims;
+using EasyPass.API.Services;
 
 namespace EasyPass.API.Controllers;
 
@@ -13,10 +14,12 @@ namespace EasyPass.API.Controllers;
 public class PasswordsController : ControllerBase
 {
     private readonly EasyPassContext _context;
+    private readonly EncryptionHelper _encryption;
 
-    public PasswordsController(EasyPassContext context)
+    public PasswordsController(EasyPassContext context, EncryptionHelper encryption)
     {
         _context = context;
+        _encryption = encryption;
     }
 
     // 🟢 GET: api/passwords
@@ -29,19 +32,34 @@ public class PasswordsController : ControllerBase
             .Where(p => p.UserId == userId)
             .ToListAsync();
 
-        return Ok(passwords);
+        // Decrypt each password before returning
+        var decrypted = passwords.Select(p =>
+        {
+            p.EncryptedPassword = _encryption.Decrypt(p.EncryptedPassword);
+            return p;
+        }).ToList();
+
+        return Ok(decrypted);
     }
 
     // 🟢 POST: api/passwords
     [HttpPost]
     public async Task<IActionResult> CreatePassword([FromBody] PasswordEntry entry)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         entry.UserId = userId;
+
+        // Encrypt before saving, client sends plaintext in EncryptedPassword field
+        entry.EncryptedPassword = _encryption.Encrypt(entry.EncryptedPassword);
 
         _context.Passwords.Add(entry);
         await _context.SaveChangesAsync();
 
+        // Return decrypted password value to client for display consistency
+        entry.EncryptedPassword = _encryption.Decrypt(entry.EncryptedPassword);
         return Ok(entry);
     }
 
@@ -49,6 +67,9 @@ public class PasswordsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdatePassword(int id, [FromBody] PasswordEntry updated)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
         var password = await _context.Passwords.FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
@@ -57,9 +78,13 @@ public class PasswordsController : ControllerBase
 
         password.Service = updated.Service;
         password.Username = updated.Username;
-        password.EncryptedPassword = updated.EncryptedPassword;
+        // Client sends plaintext; encrypt before saving
+        password.EncryptedPassword = _encryption.Encrypt(updated.EncryptedPassword);
 
         await _context.SaveChangesAsync();
+
+        // Return decrypted for client
+        password.EncryptedPassword = _encryption.Decrypt(password.EncryptedPassword);
         return Ok(password);
     }
 
@@ -92,7 +117,14 @@ public class PasswordsController : ControllerBase
         if (!results.Any())
             return NotFound("No passwords found for that service.");
 
-        return Ok(results);
+        // Decrypt before returning
+        var decrypted = results.Select(p =>
+        {
+            p.EncryptedPassword = _encryption.Decrypt(p.EncryptedPassword);
+            return p;
+        }).ToList();
+
+        return Ok(decrypted);
     }
 
 }
