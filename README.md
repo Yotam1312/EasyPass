@@ -49,7 +49,7 @@ EasyPass combines a clean UI with secure authentication, reliable data managemen
 
 EasyPass/
 
-├── EasyPass.API/ # Backend – .NET 9 Web API + EF Core + PostgreSQL + Docker
+├── EasyPass.API/ # Backend – .NET 8 Web API + EF Core + SQLite + Docker
 
 └── EasyPass.App/ # Frontend – .NET MAUI (cross-platform)
 
