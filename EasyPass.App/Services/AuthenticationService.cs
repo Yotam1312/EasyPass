@@ -1,22 +1,44 @@
 using System.Net.Http.Headers;
 using Microsoft.Maui.Storage;
+#if ANDROID || IOS || MACCATALYST
 using Plugin.Fingerprint;
 using Plugin.Fingerprint.Abstractions;
+#endif
 
 namespace EasyPass.App.Services
 {
     public class AuthenticationService
     {
         private const string TOKEN_KEY = "jwt_token";
-        private readonly IFingerprint _fingerprint;
-        
+#if ANDROID || IOS || MACCATALYST
+        private readonly IFingerprint? _fingerprint;
+#endif
+        private readonly bool _isFingerprintSupported;
+
         public AuthenticationService()
         {
-            _fingerprint = CrossFingerprint.Current;
+#if ANDROID || IOS || MACCATALYST
+            try
+            {
+                _fingerprint = CrossFingerprint.Current;
+                _isFingerprintSupported = true;
+            }
+            catch
+            {
+                _fingerprint = null;
+                _isFingerprintSupported = false;
+            }
+#else
+            _isFingerprintSupported = false;
+#endif
         }
 
         public async Task<bool> IsBiometricAvailableAsync()
         {
+#if ANDROID || IOS || MACCATALYST
+            if (!_isFingerprintSupported || _fingerprint == null)
+                return false;
+
             try
             {
                 var availability = await _fingerprint.GetAvailabilityAsync();
@@ -26,10 +48,17 @@ namespace EasyPass.App.Services
             {
                 return false;
             }
+#else
+            return await Task.FromResult(false);
+#endif
         }
 
         public async Task<bool> AuthenticateWithBiometricsAsync()
         {
+#if ANDROID || IOS || MACCATALYST
+            if (!_isFingerprintSupported || _fingerprint == null)
+                return false;
+
             try
             {
                 var request = new AuthenticationRequestConfiguration(
@@ -44,6 +73,9 @@ namespace EasyPass.App.Services
             {
                 return false;
             }
+#else
+            return await Task.FromResult(false);
+#endif
         }
 
         public async Task StoreTokenAsync(string token)

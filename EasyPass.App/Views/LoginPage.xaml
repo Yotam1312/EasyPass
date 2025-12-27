@@ -25,7 +25,15 @@
                FontSize="14"
                HorizontalOptions="Center" />
 
-        <Button Text="Login"
+        <!-- Loading Indicator (shown during login) -->
+        <ActivityIndicator x:Name="LoadingIndicator"
+                          IsRunning="False"
+                          IsVisible="False"
+                          Color="#4B24D4"
+                          HeightRequest="40" />
+
+        <Button x:Name="LoginButton"
+        Text="Login"
         Clicked="OnLoginClicked"
         BackgroundColor="#4B24D4"
         TextColor="White"

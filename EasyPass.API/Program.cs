@@ -95,4 +95,8 @@ app.UseAuthorization();
 // Map API controllers
 app.MapControllers();
 
+// Health check endpoint - returns 200 OK if the API is running
+// Used by monitoring services (like Render) to check if the API is alive
+app.MapGet("/health", () => new { status = "Healthy", timestamp = DateTime.UtcNow });
+
 app.Run();

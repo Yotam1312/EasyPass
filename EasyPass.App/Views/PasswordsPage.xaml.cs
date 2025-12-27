@@ -17,6 +17,8 @@ public partial class PasswordsPage : ContentPage
     private readonly AuthenticationService _authService;
     private List<PasswordEntry> _allPasswords = new();
     private IDispatcherTimer? _toastTimer;
+    private IDispatcherTimer? _clipboardClearTimer;  // Timer to auto-clear clipboard for security
+    private bool _isLoading = false;  // Track if we're currently doing an async operation
 
     public PasswordsPage()
     {
@@ -24,13 +26,42 @@ public partial class PasswordsPage : ContentPage
         _authService = new AuthenticationService();
         _client = new HttpClient(new AuthenticationHandler())
         {
-            BaseAddress = new Uri("https://easypass-api-plg8.onrender.com/api/")
+            BaseAddress = new Uri(AppConfig.ApiBaseUrl + "api/")
         };
-        
-        CheckAuthAndLoadPasswords();
+
+        // Use Loaded event for safer async initialization
+        this.Loaded += OnPageLoaded;
     }
 
-    private async void CheckAuthAndLoadPasswords()
+    private async void OnPageLoaded(object? sender, EventArgs e)
+    {
+        // Unsubscribe to prevent multiple calls
+        this.Loaded -= OnPageLoaded;
+        await CheckAuthAndLoadPasswordsAsync();
+    }
+
+    /// <summary>
+    /// Shows or hides the loading indicator and disables/enables buttons.
+    /// This prevents double-tapping and shows the user something is happening.
+    /// </summary>
+    private void SetLoadingState(bool isLoading)
+    {
+        _isLoading = isLoading;
+
+        // Show/hide the loading spinner
+        LoadingIndicator.IsRunning = isLoading;
+        LoadingIndicator.IsVisible = isLoading;
+
+        // Hide/show the password list (so loading indicator is visible)
+        PasswordsList.IsVisible = !isLoading;
+
+        // Disable/enable buttons to prevent double-tap
+        AddButton.IsEnabled = !isLoading;
+        GenerateButton.IsEnabled = !isLoading;
+        LogoutButton.IsEnabled = !isLoading;
+    }
+
+    private async Task CheckAuthAndLoadPasswordsAsync()
     {
         try
         {
@@ -66,13 +97,35 @@ public partial class PasswordsPage : ContentPage
                 return;
             }
 
+            // Show loading indicator while fetching passwords
+            SetLoadingState(true);
+
             var passwords = await _client.GetFromJsonAsync<List<PasswordEntry>>("Passwords");
             _allPasswords = passwords ?? new List<PasswordEntry>();
             PasswordsList.ItemsSource = _allPasswords;
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Failed to load passwords: {ex.Message}", "OK");
+            // Get user-friendly error message
+            string message = ErrorHelper.GetUserFriendlyMessage(ex);
+
+            // Ask user if they want to retry
+            bool retry = await DisplayAlert(
+                "Error",
+                message,
+                "Retry",
+                "Cancel");
+
+            if (retry)
+            {
+                // Try loading passwords again
+                await LoadPasswords();
+            }
+        }
+        finally
+        {
+            // Always hide loading indicator when done
+            SetLoadingState(false);
         }
     }
 
@@ -107,7 +160,9 @@ public partial class PasswordsPage : ContentPage
                 }
                 catch (Exception ex)
                 {
-                    await DisplayAlert("Error", $"Failed to generate password: {ex.Message}", "OK");
+                    // Show user-friendly error message
+                    string message = ErrorHelper.GetUserFriendlyMessage(ex);
+                    await DisplayAlert("Error", message, "OK");
                     continue;
                 }
             }
@@ -123,6 +178,9 @@ public partial class PasswordsPage : ContentPage
 
             try
             {
+                // Show loading while saving to API
+                SetLoadingState(true);
+
                 var newPassword = new PasswordEntry
                 {
                     Service = service,
@@ -145,13 +203,22 @@ public partial class PasswordsPage : ContentPage
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Error", $"Failed to save password: {ex.Message}", "OK");
+                // Show user-friendly error message
+                string message = ErrorHelper.GetUserFriendlyMessage(ex);
+                await DisplayAlert("Error", message, "OK");
+            }
+            finally
+            {
+                SetLoadingState(false);
             }
         }
     }
 
     private async void OnAddPasswordClicked(object sender, EventArgs e)
     {
+        // Prevent double-tap if already loading
+        if (_isLoading) return;
+
         AddPasswordPopup();
     }
 
@@ -175,20 +242,35 @@ public partial class PasswordsPage : ContentPage
     // Generates a strong password using the API
     private async void OnGeneratePasswordClicked(object sender, EventArgs e)
     {
+        // Prevent double-tap if already loading
+        if (_isLoading) return;
+
         try
         {
+            // Show loading while generating password
+            SetLoadingState(true);
+
             var generated = await _client.GetFromJsonAsync<PasswordResponse>("Utils/generate-password");
             await DisplayAlert("Strong Password Generated", generated?.Password ?? "", "Copy");
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Failed to generate password: {ex.Message}", "OK");
+            // Show user-friendly error message
+            string message = ErrorHelper.GetUserFriendlyMessage(ex);
+            await DisplayAlert("Error", message, "OK");
+        }
+        finally
+        {
+            SetLoadingState(false);
         }
     }
 
     // Deletes a password entry after confirmation
     private async void OnDeleteClicked(object sender, EventArgs e)
     {
+        // Prevent double-tap if already loading
+        if (_isLoading) return;
+
         var button = (Button)sender;
         var id = (int)button.CommandParameter;
 
@@ -206,6 +288,9 @@ public partial class PasswordsPage : ContentPage
 
         try
         {
+            // Show loading while deleting
+            SetLoadingState(true);
+
             var response = await _client.DeleteAsync($"Passwords/{id}");
             if (response.IsSuccessStatusCode)
             {
@@ -219,18 +304,22 @@ public partial class PasswordsPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Failed to delete password: {ex.Message}", "OK");
+            // Show user-friendly error message
+            string message = ErrorHelper.GetUserFriendlyMessage(ex);
+            await DisplayAlert("Error", message, "OK");
         }
-    }
-
-    private async void OnMyPasswordsClicked(object sender, EventArgs e)
-    {
-        await Navigation.PushAsync(new AllPasswordsPage(_allPasswords));
+        finally
+        {
+            SetLoadingState(false);
+        }
     }
 
     // Edits an existing password entry and updates it through the API
     private async void OnEditPasswordClicked(object sender, EventArgs e)
     {
+        // Prevent double-tap if already loading
+        if (_isLoading) return;
+
         var button = (Button)sender;
         if (button.CommandParameter is not int id)
             return;
@@ -242,12 +331,16 @@ public partial class PasswordsPage : ContentPage
             return;
         }
 
+        // Get user input (these are dialog prompts, not API calls, so no loading needed here)
         string newService = await DisplayPromptAsync("Edit Password", "Service:", initialValue: passwordEntry.Service) ?? passwordEntry.Service;
         string newUsername = await DisplayPromptAsync("Edit Password", "Username:", initialValue: passwordEntry.Username) ?? passwordEntry.Username;
         string newPassword = await DisplayPromptAsync("Edit Password", "Password:", initialValue: passwordEntry.EncryptedPassword) ?? passwordEntry.EncryptedPassword;
 
         try
         {
+            // Show loading while saving to API
+            SetLoadingState(true);
+
             var updatedEntry = new PasswordEntry
             {
                 Id = passwordEntry.Id,
@@ -271,7 +364,49 @@ public partial class PasswordsPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Failed to update password: {ex.Message}", "OK");
+            // Show user-friendly error message
+            string message = ErrorHelper.GetUserFriendlyMessage(ex);
+            await DisplayAlert("Error", message, "OK");
+        }
+        finally
+        {
+            SetLoadingState(false);
+        }
+    }
+
+    // Shows/hides the password when the Show button is clicked
+    private async void OnShowPasswordClicked(object sender, EventArgs e)
+    {
+        try
+        {
+            // Get the button and the password entry
+            var button = (Button)sender;
+            var passwordEntry = (PasswordEntry)button.CommandParameter;
+
+            // Find the parent Frame > Grid > StackLayout that contains the password label
+            var grid = (Grid)button.Parent.Parent;
+
+            // Find the password label (in the 3rd row, which is the StackLayout at index 2)
+            var passwordStack = (StackLayout)grid.Children[2];
+            var passwordLabel = (Label)passwordStack.Children[1];
+
+            // Toggle between showing and hiding the password
+            if (button.Text == "Show")
+            {
+                // Show the actual password
+                passwordLabel.Text = passwordEntry.EncryptedPassword;
+                button.Text = "Hide";
+            }
+            else
+            {
+                // Hide the password
+                passwordLabel.Text = "********";
+                button.Text = "Show";
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", "Failed to toggle password visibility", "OK");
         }
     }
 
@@ -283,12 +418,70 @@ public partial class PasswordsPage : ContentPage
             var passwordEntry = (PasswordEntry)button.CommandParameter;
 
             await Clipboard.SetTextAsync(passwordEntry.EncryptedPassword);
-            ShowToast("Password copied to clipboard");
+            ShowToast("Password copied (clears in 30s)");
+
+            // Start clipboard auto-clear timer for security
+            StartClipboardClearTimer();
         }
         catch (Exception ex)
         {
             await DisplayAlert("Error", "Failed to copy password", "OK");
         }
+    }
+
+    /// <summary>
+    /// Starts a timer to clear the clipboard after 30 seconds.
+    /// This is a security feature to prevent password theft from clipboard.
+    /// </summary>
+    private void StartClipboardClearTimer()
+    {
+        // Stop any existing timer first
+        _clipboardClearTimer?.Stop();
+
+        // Create a new timer
+        _clipboardClearTimer = Application.Current?.Dispatcher.CreateTimer();
+        if (_clipboardClearTimer != null)
+        {
+            _clipboardClearTimer.Interval = TimeSpan.FromSeconds(30);
+            _clipboardClearTimer.Tick += async (s, e) =>
+            {
+                // Clear the clipboard
+                await Clipboard.SetTextAsync(string.Empty);
+
+                // Show a brief notification
+                ShowToast("Clipboard cleared");
+
+                // Stop the timer (one-time execution)
+                _clipboardClearTimer.Stop();
+            };
+            _clipboardClearTimer.Start();
+        }
+    }
+
+    // Handles the Logout button click
+    private async void OnLogoutClicked(object sender, EventArgs e)
+    {
+        // Ask for confirmation before logging out
+        bool confirm = await DisplayAlert(
+            "Logout",
+            "Are you sure you want to logout?",
+            "Yes",
+            "No");
+
+        if (!confirm)
+        {
+            return;
+        }
+
+        // Clear the stored token
+        await _authService.ClearTokenAsync();
+
+        // Stop any running timers
+        _clipboardClearTimer?.Stop();
+        _toastTimer?.Stop();
+
+        // Navigate back to login page and clear navigation stack
+        Application.Current!.MainPage = new NavigationPage(new LoginPage());
     }
 
     private void ShowToast(string message)

@@ -21,14 +21,21 @@ public partial class LoginPage : ContentPage
         _authService = new AuthenticationService();
         _httpClient = new HttpClient(new AuthenticationHandler())
         {
-            BaseAddress = new Uri("https://easypass-api-plg8.onrender.com/")
+            BaseAddress = new Uri(AppConfig.ApiBaseUrl)
         };
-        
-        // Check for stored credentials and biometric availability
-        CheckAuthenticationStateAsync();
+
+        // Use Loaded event for safer async initialization
+        this.Loaded += OnPageLoaded;
     }
 
-    private async void CheckAuthenticationStateAsync()
+    private async void OnPageLoaded(object? sender, EventArgs e)
+    {
+        // Unsubscribe to prevent multiple calls
+        this.Loaded -= OnPageLoaded;
+        await CheckAuthenticationStateAsync();
+    }
+
+    private async Task CheckAuthenticationStateAsync()
     {
         try
         {
@@ -72,43 +79,60 @@ public partial class LoginPage : ContentPage
             }
 
             // Configure client and navigate
+            // Clear the navigation stack so user can't go back to login
             AuthenticationService.ConfigureHttpClient(_httpClient, token);
-            await Navigation.PushAsync(new PasswordsPage());
+            Application.Current!.MainPage = new NavigationPage(new PasswordsPage());
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", 
-                $"Biometric authentication error: {ex.Message}", "OK");
+            // Show user-friendly error message based on error type
+            string message = ErrorHelper.GetUserFriendlyMessage(ex);
+            await DisplayAlert("Error", message, "OK");
         }
     }
 
     // Handles login button click and sends credentials to the API
     private async void OnLoginClicked(object sender, EventArgs e)
     {
+        // Hide any previous error message
+        ErrorLabel.IsVisible = false;
+
+        // Get the values from the input fields
         string username = UsernameEntry.Text?.Trim() ?? "";
         string pin = PinEntry.Text?.Trim() ?? "";
 
+        // Check if both fields are filled
         if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(pin))
         {
-            await DisplayAlert("Error", "Please enter both username and PIN.", "OK");
+            ShowError("Please enter both username and PIN.");
             return;
         }
 
+        // Show loading indicator and disable login button
+        LoadingIndicator.IsVisible = true;
+        LoadingIndicator.IsRunning = true;
+        LoginButton.IsEnabled = false;
+
         try
         {
+            // Create the login request
             var loginRequest = new { Username = username, Pin = pin };
+
+            // Send POST request to the API
             var response = await _httpClient.PostAsJsonAsync("api/auth/login", loginRequest);
 
+            // Check if login was successful
             if (!response.IsSuccessStatusCode)
             {
-                await DisplayAlert("Login Failed", "Invalid username or PIN.", "OK");
+                ShowError("Invalid username or PIN.");
                 return;
             }
 
+            // Read the response
             var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
             if (result?.Token == null)
             {
-                await DisplayAlert("Error", "Failed to receive token.", "OK");
+                ShowError("Failed to receive token.");
                 return;
             }
 
@@ -116,46 +140,41 @@ public partial class LoginPage : ContentPage
             await _authService.StoreTokenAsync(result.Token);
             AuthenticationService.ConfigureHttpClient(_httpClient, result.Token);
 
-            await DisplayAlert("Success", "Logged in successfully!", "OK");
-            await Navigation.PushAsync(new PasswordsPage());
+            // Navigate to passwords page and clear the navigation stack
+            // This prevents the user from pressing back and returning to login
+            Application.Current!.MainPage = new NavigationPage(new PasswordsPage());
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Login failed: {ex.Message}", "OK");
-        }
-
-    }
-    private async void OnRegisterClicked(object sender, EventArgs e)
-    {
-        string username = await DisplayPromptAsync("Register", "Enter a username:");
-        if (string.IsNullOrWhiteSpace(username))
-            return;
-
-        string pin = await DisplayPromptAsync("Register", "Enter a digit PIN:");
-        if (string.IsNullOrWhiteSpace(pin))
-            return;
-
-        try
-        {
-            var registerRequest = new { Username = username, Pin = pin };
-            var response = await _httpClient.PostAsJsonAsync(
-                "api/auth/register", registerRequest);
-
-            if (response.IsSuccessStatusCode)
+            // Show user-friendly error message based on error type
+            if (ErrorHelper.IsNetworkError(ex))
             {
-                await DisplayAlert("Success", 
-                    "Account created successfully! You can now log in.", "OK");
+                ShowError("No internet connection. Please check your network.");
             }
             else
             {
-                var error = await response.Content.ReadAsStringAsync();
-                await DisplayAlert("Error", $"Registration failed: {error}", "OK");
+                ShowError("Login failed. Please try again.");
             }
         }
-        catch (Exception ex)
+        finally
         {
-            await DisplayAlert("Error", $"Registration failed: {ex.Message}", "OK");
+            // Hide loading indicator and enable login button
+            LoadingIndicator.IsVisible = false;
+            LoadingIndicator.IsRunning = false;
+            LoginButton.IsEnabled = true;
         }
+    }
+
+    // Shows an error message to the user
+    private void ShowError(string message)
+    {
+        ErrorLabel.Text = message;
+        ErrorLabel.IsVisible = true;
+    }
+    // Navigates to the RegisterPage when Register button is clicked
+    private async void OnRegisterClicked(object sender, EventArgs e)
+    {
+        await Navigation.PushAsync(new RegisterPage());
     }
 
 
