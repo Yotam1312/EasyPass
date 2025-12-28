@@ -41,22 +41,14 @@ Built as a cross-platform app using .NET MAUI with a .NET 8 Web API backend (hos
 
 ```
 EasyPass/
-├── EasyPass.API/     # .NET 8 Web API + EF Core + PostgreSQL + Docker
-│   ├── Controllers/  # Auth, Passwords, Utils endpoints
-│   ├── Services/     # JWT, Encryption, Password Generation
-│   └── Models/       # User, PasswordEntry, DTOs
-│
-└── EasyPass.App/     # .NET MAUI Cross-Platform App
-    ├── Views/        # LoginPage, RegisterPage, PasswordsPage
-    ├── Services/     # PasswordService, AuthenticationService
-    └── Models/       # PasswordEntry
-```
 
-**Design Patterns Used:**
-- Dependency Injection (services registered in MauiProgram.cs)
-- Service Layer (PasswordService for API calls)
-- DelegatingHandler (AuthenticationHandler for JWT injection)
+├── EasyPass.API/ # Backend – .NET 9 Web API + EF Core + PostgreSQL + Docker
 
+└── EasyPass.App/ # Frontend – .NET MAUI (cross-platform)
+
+* The API handles authentication, data persistence, and JWT token management.
+
+* The MAUI app provides a user-friendly interface for managing credentials across platforms.
 ## Tech Stack
 
 | Category | Technology |
