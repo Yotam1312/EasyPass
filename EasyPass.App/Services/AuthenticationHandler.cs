@@ -6,7 +6,8 @@ namespace EasyPass.App.Services
 {
     public class AuthenticationHandler : DelegatingHandler
     {
-        public AuthenticationHandler() : base(new HttpClientHandler())
+        // Empty constructor for DI - the HttpClientFactory will set InnerHandler
+        public AuthenticationHandler()
         {
         }
 
@@ -45,7 +46,8 @@ namespace EasyPass.App.Services
                     }
 
                     // Reset app to LoginPage (same pattern as logout)
-                    Application.Current!.MainPage = new NavigationPage(new LoginPage());
+                    // Use App.GetPage to get the page through DI
+                    Application.Current!.MainPage = new NavigationPage(App.GetPage<LoginPage>());
                 });
             }
 

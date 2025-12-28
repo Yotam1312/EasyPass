@@ -1,90 +1,119 @@
-EasyPass 🔐
+# EasyPass
 
 A simple, secure, and accessible password manager built with .NET.
+
 ## About
 
- EasyPass is a lightweight password manager designed to make password storage effortless  especially for older users who value simplicity over complexity.
+EasyPass is a lightweight password manager designed to make password storage effortless — especially for older users who value simplicity over complexity.
 
-The goal : help people securely store and manage their passwords without confusion or technical barriers.
+**The goal:** Help people securely store and manage their passwords without confusion or technical barriers.
 
-Built as a cross-platform app using .NET MAUI with a .NET 9 Web API backend (hosted on Render) and a local SQLite cloud database,
-EasyPass combines a clean UI with secure authentication, reliable data management, and modern deployment using Docker containers.
-## Project Status 🚀
+Built as a cross-platform app using .NET MAUI with a .NET 8 Web API backend (hosted on Render), EasyPass combines a clean UI with secure authentication, reliable data management, and modern deployment using Docker containers.
 
-* The project backend is fully functional and Dockerized.
-* Android app successfully tested with the live API hosted on Render.
-* AES-256 encryption for stored passwords is implemented.
-* All core functionality (registration, login with PIN, password management, and CRUD operations) is working with a live connection.
+## Project Status
 
+**~95% Complete** — Ready for release!
 
-🧱 Planned Features
-
-⚡ Performance optimization for faster login and registration  
-
-👆 “Remember Me” and biometric login (fingerprint / Face ID)  
-
-🎨 Complete UI/UX redesign for improved accessibility
-
-📱 iOS version and further Android polish
-
- **And more to come**
+- Backend fully functional and Dockerized
+- Android app tested with live API on Render
+- AES-256 encryption for stored passwords
+- Complete CRUD operations with live connection
+- Dependency Injection architecture
+- Comprehensive error handling with retry logic
+- Security features (clipboard auto-clear, session expiration)
 
 ## Key Features
-🧍‍♂️ User registration & login with secure PIN authentication
 
-🔐 Cloud-based password storage using PostgreSQL
+| Feature | Description |
+|---------|-------------|
+| **Secure Authentication** | PIN-based login with BCrypt hashing |
+| **AES-256 Encryption** | All passwords encrypted before storage |
+| **JWT Tokens** | Secure API communication |
+| **Full CRUD** | Add, edit, delete, search passwords |
+| **Password Generator** | Built-in cryptographically secure generator |
+| **Clipboard Security** | Auto-clears after 30 seconds |
+| **Session Management** | Auto-logout on token expiration |
+| **Error Handling** | User-friendly messages with retry options |
+| **Password Visibility** | Show/hide toggle for each password |
+| **Accessible Design** | Large buttons, readable text, simple navigation |
 
-🔁 JWT-based communication between the app and API
-
-🧱 Entity Framework Core + PostgreSQL for robust ORM and data persistence
-
-🔧 Add / edit / delete / search passwords easily
-
-💡 Built-in strong password generator
-
-🧓 Accessible design – large buttons, readable text, and minimal menus
-
-🐳 Docker-based API deployment on Render
 ## Architecture
 
+```
 EasyPass/
+├── EasyPass.API/     # .NET 8 Web API + EF Core + PostgreSQL + Docker
+│   ├── Controllers/  # Auth, Passwords, Utils endpoints
+│   ├── Services/     # JWT, Encryption, Password Generation
+│   └── Models/       # User, PasswordEntry, DTOs
+│
+└── EasyPass.App/     # .NET MAUI Cross-Platform App
+    ├── Views/        # LoginPage, RegisterPage, PasswordsPage
+    ├── Services/     # PasswordService, AuthenticationService
+    └── Models/       # PasswordEntry
+```
 
-├── EasyPass.API/ # Backend – .NET 9 Web API + EF Core + PostgreSQL + Docker
+**Design Patterns Used:**
+- Dependency Injection (services registered in MauiProgram.cs)
+- Service Layer (PasswordService for API calls)
+- DelegatingHandler (AuthenticationHandler for JWT injection)
 
-└── EasyPass.App/ # Frontend – .NET MAUI (cross-platform)
-
-* The API handles authentication, data persistence, and JWT token management.
-
-* The MAUI app provides a user-friendly interface for managing credentials across platforms.
 ## Tech Stack
 
-Languages: C#
+| Category | Technology |
+|----------|------------|
+| **Language** | C# |
+| **Mobile Framework** | .NET MAUI 8.0 |
+| **Backend Framework** | ASP.NET Core 8.0 |
+| **ORM** | Entity Framework Core |
+| **Database** | SQLServer (Production), SQLite (Development) |
+| **Authentication** | JWT Tokens + BCrypt |
+| **Encryption** | AES-256 CBC with SHA-256 key derivation |
+| **Deployment** | Docker + Render |
+| **IDE** | Visual Studio 2022 |
 
-Frameworks: .NET MAUI, ASP.NET Core 9.0, Entity Framework Core
+## Security Implementation
 
-Database: Local SQLite
+| Layer | Protection |
+|-------|------------|
+| **PIN Storage** | BCrypt with salt (cost factor 12) |
+| **Password Storage** | AES-256 CBC with random IV per entry |
+| **API Communication** | JWT Bearer tokens (1-hour expiry) |
+| **Mobile Storage** | SecureStorage (Keychain/Keystore) |
+| **Clipboard** | Auto-clear after 30 seconds |
+| **Session** | Auto-logout on 401 response |
+| **Transport** | HTTPS enforced, SSL database connection |
 
-Auth: JWT Tokens
+## API Endpoints
 
-Deployment: Docker + Render
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/auth/register` | No | Register new user |
+| POST | `/api/auth/login` | No | Login, returns JWT |
+| GET | `/api/passwords` | JWT | List all passwords |
+| POST | `/api/passwords` | JWT | Create password |
+| PUT | `/api/passwords/{id}` | JWT | Update password |
+| DELETE | `/api/passwords/{id}` | JWT | Delete password |
+| GET | `/api/passwords/search?service=` | JWT | Search passwords |
+| GET | `/api/utils/generate-password` | No | Generate strong password |
+| GET | `/health` | No | API health check |
 
-Tools: Visual Studio 2022, Git, GitHub
+## Screenshots
 
+*Coming soon*
 
-## Security Notes
-* User PINs are hashed and salted using BCrypt.
-  
-* All communication between the app and API is secured with JWT tokens.
-  
-* Passwords are encrypted with **AES-256 (CBC mode)** using SHA-256–derived keys and random IVs.
-  
-* Database connection to Render is secured with SSL.
+## Future Enhancements
+
+- Biometric login (fingerprint / Face ID)
+- Offline mode with local caching
+- iOS version
+- Theme customization
 
 ## Motivation
 
-Password managers are often over-engineered for nontechnical users.
-EasyPass aims to deliver the same security with a much simpler experience.
-It’s designed for older users who just want a clear, comfortable way to manage their digital lives.
+Password managers are often over-engineered for non-technical users. EasyPass aims to deliver the same security with a much simpler experience.
 
-The idea came after seeing how my elderly family members struggled to use traditional password managers.
-I wanted to create a version that feels simple, familiar, and friendly without compromising on security or modern cloud reliability.
+The idea came after seeing how my elderly family members struggled to use traditional password managers. I wanted to create a version that feels simple, familiar, and friendly — without compromising on security or modern cloud reliability.
+
+## License
+
+This project was created as a Computer Science student project.

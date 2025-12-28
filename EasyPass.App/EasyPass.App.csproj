@@ -35,6 +35,18 @@
     <WindowsPackageType Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">None</WindowsPackageType>
   </PropertyGroup>
 
+  <!-- Android Release Signing Configuration -->
+  <!-- IMPORTANT: Replace YOUR_PASSWORD with your actual keystore password -->
+  <PropertyGroup Condition="$(TargetFramework.Contains('-android')) and '$(Configuration)' == 'Release'">
+    <ApplicationId>com.easypass.app</ApplicationId>
+    <AndroidKeyStore>true</AndroidKeyStore>
+    <AndroidSigningKeyStore>Platforms\Android\EasyPass.keystore</AndroidSigningKeyStore>
+    <AndroidSigningKeyAlias>easypass</AndroidSigningKeyAlias>
+    <!-- TODO: Replace with your keystore password or use environment variable -->
+    <AndroidSigningKeyPass>YOUR_PASSWORD</AndroidSigningKeyPass>
+    <AndroidSigningStorePass>YOUR_PASSWORD</AndroidSigningStorePass>
+  </PropertyGroup>
+
   <!-- Resources -->
   <ItemGroup>
     <MauiIcon Include="Resources\AppIcon\appicon.svg"
@@ -60,6 +72,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.100" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
     <PackageReference Include="Plugin.Fingerprint" Version="3.0.0-beta.1" />
   </ItemGroup>
 

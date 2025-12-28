@@ -11,15 +11,13 @@ public partial class RegisterPage : ContentPage
     // HttpClient to make API calls
     private readonly HttpClient _httpClient;
 
-    public RegisterPage()
+    // Constructor receives HttpClientFactory from Dependency Injection
+    public RegisterPage(IHttpClientFactory httpClientFactory)
     {
         InitializeComponent();
 
-        // Create HttpClient with the API base address
-        _httpClient = new HttpClient(new AuthenticationHandler())
-        {
-            BaseAddress = new Uri(AppConfig.ApiBaseUrl)
-        };
+        // Get the HttpClient for authentication (without /api/ path)
+        _httpClient = httpClientFactory.CreateClient("EasyPassAuth");
     }
 
     // Handles the Register button click

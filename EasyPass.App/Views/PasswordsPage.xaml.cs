@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Storage;
@@ -13,21 +11,23 @@ namespace EasyPass.App.Views;
 
 public partial class PasswordsPage : ContentPage
 {
-    private readonly HttpClient _client;
+    // Services are injected through the constructor (Dependency Injection)
+    private readonly PasswordService _passwordService;
     private readonly AuthenticationService _authService;
+
     private List<PasswordEntry> _allPasswords = new();
     private IDispatcherTimer? _toastTimer;
     private IDispatcherTimer? _clipboardClearTimer;  // Timer to auto-clear clipboard for security
     private bool _isLoading = false;  // Track if we're currently doing an async operation
 
-    public PasswordsPage()
+    // Constructor receives services from Dependency Injection
+    public PasswordsPage(PasswordService passwordService, AuthenticationService authService)
     {
         InitializeComponent();
-        _authService = new AuthenticationService();
-        _client = new HttpClient(new AuthenticationHandler())
-        {
-            BaseAddress = new Uri(AppConfig.ApiBaseUrl + "api/")
-        };
+
+        // Store the injected services
+        _passwordService = passwordService;
+        _authService = authService;
 
         // Use Loaded event for safer async initialization
         this.Loaded += OnPageLoaded;
@@ -100,8 +100,8 @@ public partial class PasswordsPage : ContentPage
             // Show loading indicator while fetching passwords
             SetLoadingState(true);
 
-            var passwords = await _client.GetFromJsonAsync<List<PasswordEntry>>("Passwords");
-            _allPasswords = passwords ?? new List<PasswordEntry>();
+            // Use the PasswordService to get all passwords
+            _allPasswords = await _passwordService.GetAllPasswordsAsync();
             PasswordsList.ItemsSource = _allPasswords;
         }
         catch (Exception ex)
@@ -155,8 +155,8 @@ public partial class PasswordsPage : ContentPage
             {
                 try
                 {
-                    var generated = await _client.GetFromJsonAsync<PasswordResponse>("Utils/generate-password");
-                    password = generated?.Password ?? string.Empty;
+                    // Use the PasswordService to generate a strong password
+                    password = await _passwordService.GeneratePasswordAsync();
                 }
                 catch (Exception ex)
                 {
@@ -188,8 +188,9 @@ public partial class PasswordsPage : ContentPage
                     EncryptedPassword = password
                 };
 
-                var response = await _client.PostAsJsonAsync("Passwords", newPassword);
-                if (response.IsSuccessStatusCode)
+                // Use the PasswordService to create the password
+                bool success = await _passwordService.CreatePasswordAsync(newPassword);
+                if (success)
                 {
                     await DisplayAlert("Success", "Password saved!", "OK");
                     await LoadPasswords();
@@ -197,8 +198,7 @@ public partial class PasswordsPage : ContentPage
                 }
                 else
                 {
-                    var errorMsg = await response.Content.ReadAsStringAsync();
-                    await DisplayAlert("Error", $"Failed to save password: {errorMsg}", "OK");
+                    await DisplayAlert("Error", "Failed to save password.", "OK");
                 }
             }
             catch (Exception ex)
@@ -250,8 +250,9 @@ public partial class PasswordsPage : ContentPage
             // Show loading while generating password
             SetLoadingState(true);
 
-            var generated = await _client.GetFromJsonAsync<PasswordResponse>("Utils/generate-password");
-            await DisplayAlert("Strong Password Generated", generated?.Password ?? "", "Copy");
+            // Use the PasswordService to generate a strong password
+            string password = await _passwordService.GeneratePasswordAsync();
+            await DisplayAlert("Strong Password Generated", password, "Copy");
         }
         catch (Exception ex)
         {
@@ -291,8 +292,9 @@ public partial class PasswordsPage : ContentPage
             // Show loading while deleting
             SetLoadingState(true);
 
-            var response = await _client.DeleteAsync($"Passwords/{id}");
-            if (response.IsSuccessStatusCode)
+            // Use the PasswordService to delete the password
+            bool success = await _passwordService.DeletePasswordAsync(id);
+            if (success)
             {
                 ShowToast("Password deleted successfully");
                 await LoadPasswords();
@@ -350,16 +352,16 @@ public partial class PasswordsPage : ContentPage
                 UserId = passwordEntry.UserId
             };
 
-            var response = await _client.PutAsJsonAsync($"Passwords/{passwordEntry.Id}", updatedEntry);
-            if (response.IsSuccessStatusCode)
+            // Use the PasswordService to update the password
+            bool success = await _passwordService.UpdatePasswordAsync(passwordEntry.Id, updatedEntry);
+            if (success)
             {
                 await DisplayAlert("Success", "Password updated!", "OK");
                 await LoadPasswords();
             }
             else
             {
-                var errorMsg = await response.Content.ReadAsStringAsync();
-                await DisplayAlert("Error", $"Failed to update password: {errorMsg}", "OK");
+                await DisplayAlert("Error", "Failed to update password.", "OK");
             }
         }
         catch (Exception ex)
@@ -481,7 +483,8 @@ public partial class PasswordsPage : ContentPage
         _toastTimer?.Stop();
 
         // Navigate back to login page and clear navigation stack
-        Application.Current!.MainPage = new NavigationPage(new LoginPage());
+        // Use App.GetPage to get the page through DI
+        Application.Current!.MainPage = new NavigationPage(App.GetPage<LoginPage>());
     }
 
     private void ShowToast(string message)
@@ -525,10 +528,5 @@ public partial class PasswordsPage : ContentPage
             };
             _toastTimer.Start();
         }
-    }
-
-    private class PasswordResponse
-    {
-        public string Password { get; set; } = string.Empty;
     }
 }

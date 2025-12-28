@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -15,14 +15,14 @@ public partial class LoginPage : ContentPage
     private readonly AuthenticationService _authService;
     private bool _isBiometricAvailable;
 
-    public LoginPage()
+    // Constructor receives services from Dependency Injection
+    public LoginPage(IHttpClientFactory httpClientFactory, AuthenticationService authService)
     {
         InitializeComponent();
-        _authService = new AuthenticationService();
-        _httpClient = new HttpClient(new AuthenticationHandler())
-        {
-            BaseAddress = new Uri(AppConfig.ApiBaseUrl)
-        };
+
+        // Get the HttpClient for authentication (without /api/ path)
+        _httpClient = httpClientFactory.CreateClient("EasyPassAuth");
+        _authService = authService;
 
         // Use Loaded event for safer async initialization
         this.Loaded += OnPageLoaded;
@@ -81,7 +81,8 @@ public partial class LoginPage : ContentPage
             // Configure client and navigate
             // Clear the navigation stack so user can't go back to login
             AuthenticationService.ConfigureHttpClient(_httpClient, token);
-            Application.Current!.MainPage = new NavigationPage(new PasswordsPage());
+            // Use App.GetPage to get the page through DI
+            Application.Current!.MainPage = new NavigationPage(App.GetPage<PasswordsPage>());
         }
         catch (Exception ex)
         {
@@ -142,7 +143,8 @@ public partial class LoginPage : ContentPage
 
             // Navigate to passwords page and clear the navigation stack
             // This prevents the user from pressing back and returning to login
-            Application.Current!.MainPage = new NavigationPage(new PasswordsPage());
+            // Use App.GetPage to get the page through DI
+            Application.Current!.MainPage = new NavigationPage(App.GetPage<PasswordsPage>());
         }
         catch (Exception ex)
         {
@@ -174,7 +176,8 @@ public partial class LoginPage : ContentPage
     // Navigates to the RegisterPage when Register button is clicked
     private async void OnRegisterClicked(object sender, EventArgs e)
     {
-        await Navigation.PushAsync(new RegisterPage());
+        // Use App.GetPage to get the page through DI
+        await Navigation.PushAsync(App.GetPage<RegisterPage>());
     }
 
 
