@@ -14,23 +14,43 @@ namespace EasyPass.App.Services
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            // Add the JWT token to the request header if we have one
-            var token = await SecureStorage.Default.GetAsync("jwt_token");
-
-            if (!string.IsNullOrEmpty(token))
+            // Try to add the JWT token to the request header if we have one
+            // SecureStorage can fail on Windows in debug mode, so we wrap it in try-catch
+            try
             {
-                request.Headers.Authorization =
-                    new AuthenticationHeaderValue("Bearer", token);
+                var token = await SecureStorage.Default.GetAsync("jwt_token");
+
+                if (!string.IsNullOrEmpty(token))
+                {
+                    request.Headers.Authorization =
+                        new AuthenticationHeaderValue("Bearer", token);
+                }
+            }
+            catch
+            {
+                // SecureStorage failed (common on Windows debug mode)
+                // Continue without the token - registration and login don't need it
             }
 
             // Send the request and get the response
             var response = await base.SendAsync(request, cancellationToken);
 
             // Check if we got 401 Unauthorized (token expired or invalid)
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            // But skip this for login/register endpoints - they handle their own 401 errors
+            string requestPath = request.RequestUri?.AbsolutePath ?? "";
+            bool isAuthEndpoint = requestPath.Contains("/auth/login") || requestPath.Contains("/auth/register");
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized && !isAuthEndpoint)
             {
                 // Clear the stored token since it's no longer valid
-                SecureStorage.Default.Remove("jwt_token");
+                try
+                {
+                    SecureStorage.Default.Remove("jwt_token");
+                }
+                catch
+                {
+                    // SecureStorage might fail on Windows, ignore
+                }
 
                 // Navigate to LoginPage and show message on the main thread
                 // (UI changes must happen on the main thread)

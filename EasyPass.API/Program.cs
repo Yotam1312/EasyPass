@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,9 +12,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<PasswordGeneratorService>();
 builder.Services.AddSingleton<EncryptionHelper>();
 
-// Database configuration - switch to PostgreSQL for deployment on Render
+// Database configuration - using SQL Server
 builder.Services.AddDbContext<EasyPassContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<JwtService>();

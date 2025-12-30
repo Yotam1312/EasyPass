@@ -112,13 +112,22 @@ public partial class RegisterPage : ContentPage
             {
                 // Read error message from API
                 string errorMessage = await response.Content.ReadAsStringAsync();
+                // Show popup with status code and error for debugging
+                await DisplayAlert("API Error", $"Status: {response.StatusCode}\n{errorMessage}", "OK");
                 ShowError("Registration failed: " + errorMessage);
             }
         }
         catch (Exception ex)
         {
-            // Show error if API call failed
-            ShowError("Registration failed: " + ex.Message);
+            // Show error if API call failed - include full exception details for debugging
+            string errorDetails = ex.Message;
+            if (ex.InnerException != null)
+            {
+                errorDetails += " | Inner: " + ex.InnerException.Message;
+            }
+            // Use popup alert to show full error (easier to read than label)
+            await DisplayAlert("Registration Error", errorDetails, "OK");
+            ShowError("Registration failed");
         }
         finally
         {

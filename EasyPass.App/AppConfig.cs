@@ -8,6 +8,6 @@ namespace EasyPass.App
     {
         // The base URL for the EasyPass API
         // Change this when deploying to a different server
-        public static string ApiBaseUrl = "https://easypass-api-plg8.onrender.com/";
+        public static string ApiBaseUrl = "http://localhost:5023/";
     }
 }
