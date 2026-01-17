@@ -38,8 +38,6 @@ Built as a cross-platform app using .NET MAUI with a .NET 8 Web API backend (hos
 | **Accessible Design** | Large buttons, readable text, simple navigation |
 
 ## Architecture
-
-```
 EasyPass/
 
 ├── EasyPass.API/ # Backend – .NET 9 Web API + EF Core + PostgreSQL + Docker
