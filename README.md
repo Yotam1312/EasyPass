@@ -12,6 +12,8 @@ Built as a cross-platform app using .NET MAUI with a .NET 8 Web API backend (hos
 
 ## Project Status
 
+**🎯 98% Completed**
+
 ### ✅ **Major Achievements:**
 - **Production Security**: Environment-based configuration, no hardcoded secrets
 - **Comprehensive Testing**: 37 tests with xUnit framework (26 passing, 70% coverage)
@@ -33,9 +35,11 @@ Built as a cross-platform app using .NET MAUI with a .NET 8 Web API backend (hos
 | **Error Handling** | User-friendly messages with retry options |
 | **Password Visibility** | Show/hide toggle for each password |
 | **Accessible Design** | Large buttons, readable text, simple navigation |
-| **Comprehensive Testing** | 37 unit & integration tests with xUnit |
+| **Comprehensive Testing** | 37 unit & integration tests with xUnit framework |
 
 ## Architecture
+
+```
 EasyPass/
 ├── EasyPass.API/          # Backend – .NET 8 Web API + EF Core + PostgreSQL + Docker
 ├── EasyPass.App/          # Frontend – .NET MAUI (cross-platform)
@@ -57,7 +61,6 @@ EasyPass/
 | **Database** | SQLServer (Production), In-Memory (Testing), SQLite (Development) |
 | **Authentication** | JWT Tokens + BCrypt |
 | **Encryption** | AES-256 CBC with SHA-256 key derivation |
-| **Configuration** | Environment variables + User Secrets |
 | **Deployment** | Docker + Render |
 | **IDE** | Visual Studio 2022 |
 
@@ -178,16 +181,11 @@ dotnet test --verbosity normal
 - API rate limiting and monitoring
 
 ### Nice-to-Have Features
+
 - Biometric login (fingerprint / Face ID)
 - Offline mode with local caching
 - iOS version
 - Theme customization
-
-## Motivation
-
-Password managers are often over-engineered for non-technical users. EasyPass aims to deliver the same security with a much simpler experience.
-
-The idea came after seeing how my elderly family members struggled to use traditional password managers. I wanted to create a version that feels simple, familiar, and friendly — without compromising on security or modern cloud reliability.
 
 ## Portfolio Highlights
 
@@ -197,6 +195,12 @@ This project demonstrates:
 - **Professional Architecture**: Clean separation of concerns, dependency injection, service layer design
 - **Production Readiness**: Docker deployment, comprehensive documentation, error handling
 - **Modern Development**: .NET 8, MAUI cross-platform, Entity Framework Core, JWT authentication
+
+## Motivation
+
+Password managers are often over-engineered for non-technical users. EasyPass aims to deliver the same security with a much simpler experience.
+
+The idea came after seeing how my elderly family members struggled to use traditional password managers. I wanted to create a version that feels simple, familiar, and friendly — without compromising on security or modern cloud reliability.
 
 ## License
 
