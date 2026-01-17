@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyPass.API", "EasyPass.AP
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyPass.App", "EasyPass.App\EasyPass.App.csproj", "{9A47F63E-5725-520F-536D-C3C9AD302D88}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyPass.Tests", "EasyPass.Tests\EasyPass.Tests.csproj", "{05A75EC4-C172-4CAC-8C9A-CF0CE332E3A0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,6 +25,10 @@ Global
 		{9A47F63E-5725-520F-536D-C3C9AD302D88}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9A47F63E-5725-520F-536D-C3C9AD302D88}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9A47F63E-5725-520F-536D-C3C9AD302D88}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{05A75EC4-C172-4CAC-8C9A-CF0CE332E3A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05A75EC4-C172-4CAC-8C9A-CF0CE332E3A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05A75EC4-C172-4CAC-8C9A-CF0CE332E3A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05A75EC4-C172-4CAC-8C9A-CF0CE332E3A0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
