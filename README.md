@@ -75,6 +75,27 @@ EasyPass/
 | **Session** | Auto-logout on 401 response |
 | **Transport** | HTTPS enforced, SSL database connection |
 
+### Security Configuration
+
+⚠️ **Important**: This application requires secure configuration of JWT and encryption keys.
+
+**Development Setup:**
+```bash
+cd EasyPass.API
+dotnet user-secrets set "Jwt:Key" "your-development-jwt-key-32-chars-minimum"
+dotnet user-secrets set "Encryption:Key" "your-development-encryption-key-32-chars-minimum"
+```
+
+**Production Deployment:**
+Set these environment variables in your hosting environment:
+```bash
+export Jwt__Key="your-super-secure-jwt-key-at-least-32-characters-long"
+export Encryption__Key="your-super-secure-encryption-key-for-aes256"
+export ConnectionStrings__DefaultConnection="your-database-connection-string"
+```
+
+📖 **See [SECURITY.md](SECURITY.md) for complete security configuration guide.**
+
 ## API Endpoints
 
 | Method | Endpoint | Auth | Description |

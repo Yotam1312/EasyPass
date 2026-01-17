@@ -59,8 +59,13 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // JWT configuration for token validation and authentication
+// Keys are loaded from environment variables or user secrets for security
 var jwtSection = builder.Configuration.GetSection("Jwt");
-var jwtKey = jwtSection["Key"]!;
+var jwtKey = builder.Configuration["Jwt:Key"] ?? 
+    throw new InvalidOperationException("JWT Key not found. Please set the 'Jwt:Key' environment variable or user secret.");
+var encryptionKey = builder.Configuration["Encryption:Key"] ?? 
+    throw new InvalidOperationException("Encryption Key not found. Please set the 'Encryption:Key' environment variable or user secret.");
+
 var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -369,5 +369,16 @@ CLAUDE.md
 TODOList.md
 PRODUCTION_PLAN.md
 
+# Security - Environment Variables and Secrets
+.env
+.env.local
+.env.production
+.env.staging
+*.key
+*.pem
+*.p12
+*.pfx
+appsettings.Production.json
+secrets.json
 
 .claude/
