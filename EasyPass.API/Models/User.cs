@@ -18,7 +18,7 @@ public class User
     [MaxLength(200)]
     public string PinHash { get; set; } = string.Empty;
 
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
    
     // A user can have multiple saved passwords
     public ICollection<PasswordEntry> Passwords { get; set; } = new List<PasswordEntry>();
