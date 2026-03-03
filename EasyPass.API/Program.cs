@@ -12,9 +12,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<PasswordGeneratorService>();
 builder.Services.AddSingleton<EncryptionHelper>();
 
-// Database configuration - using SQL Server
+// Database configuration - using PostgreSQL
 builder.Services.AddDbContext<EasyPassContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<JwtService>();
