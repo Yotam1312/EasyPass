@@ -7,7 +7,7 @@ namespace EasyPass.App.Services
     /// Service class that handles all password-related API operations.
     /// This centralizes the API calls so they're not scattered in the UI code.
     /// </summary>
-    public class PasswordService
+    public class PasswordService : IPasswordService
     {
         // HttpClient is injected through the constructor
         private readonly HttpClient _httpClient;

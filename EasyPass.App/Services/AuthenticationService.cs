@@ -7,7 +7,7 @@ using Plugin.Fingerprint.Abstractions;
 
 namespace EasyPass.App.Services
 {
-    public class AuthenticationService
+    public class AuthenticationService : IAuthenticationService
     {
         private const string TOKEN_KEY = "jwt_token";
 #if ANDROID || IOS || MACCATALYST
