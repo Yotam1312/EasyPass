@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using EasyPass.App.Services;
+using EasyPass.App.ViewModels;
 using EasyPass.App.Views;
 
 namespace EasyPass.App;
@@ -25,11 +26,12 @@ public static class MauiProgram
         // Register AuthenticationHandler as transient (new instance each time)
         builder.Services.AddTransient<AuthenticationHandler>();
 
-        // Register services
-        // Singleton = one instance shared by everyone
+        // Register services via their interfaces.
+        // This lets us swap implementations (e.g., mock services for testing).
+        // Singleton = one instance shared by everyone (AuthService stores state)
         // Transient = new instance each time it's requested
-        builder.Services.AddSingleton<AuthenticationService>();
-        builder.Services.AddTransient<PasswordService>();
+        builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
+        builder.Services.AddTransient<IPasswordService, PasswordService>();
 
         // Register HttpClient for API calls (with /api/ base path)
         // This HttpClient is used by PasswordService for password operations
@@ -47,7 +49,12 @@ public static class MauiProgram
         })
         .AddHttpMessageHandler<AuthenticationHandler>();
 
-        // Register pages so they can receive dependencies through constructors
+        // Register ViewModels (transient = fresh state each time a page is opened)
+        builder.Services.AddTransient<LoginViewModel>();
+        builder.Services.AddTransient<RegisterViewModel>();
+        builder.Services.AddTransient<PasswordsViewModel>();
+
+        // Register pages so they can receive ViewModels through constructors
         builder.Services.AddTransient<LoginPage>();
         builder.Services.AddTransient<RegisterPage>();
         builder.Services.AddTransient<PasswordsPage>();
