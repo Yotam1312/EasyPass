@@ -1,9 +1,6 @@
-﻿using System.Security.Cryptography;
-using System.Text;
 using Microsoft.EntityFrameworkCore;
 using EasyPass.API.Data;
 using EasyPass.API.Models;
-using BCrypt.Net;
 
 namespace EasyPass.API.Services;
 
@@ -19,10 +16,12 @@ public class UserService
     };
 
     private readonly EasyPassContext _context;
+    private readonly LoginAttemptService _loginAttemptService;
 
-    public UserService(EasyPassContext context)
+    public UserService(EasyPassContext context, LoginAttemptService loginAttemptService)
     {
         _context = context;
+        _loginAttemptService = loginAttemptService;
     }
 
     // Registers a new user with a BCrypt-hashed PIN.
@@ -43,7 +42,6 @@ public class UserService
         {
             Username = username,
             PinHash = hash,
-            
         };
 
         _context.Users.Add(user);
@@ -52,14 +50,32 @@ public class UserService
         return user;
     }
 
-    // Validates user login by verifying the BCrypt hash.
-    public async Task<User?> LoginAsync(string username, string pin)
+    // Validates user login. Returns a LoginResult with success/failure and a message.
+    // Also handles account lockout logic via LoginAttemptService.
+    public async Task<LoginResult> LoginAsync(string username, string pin)
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
-        if (user == null) return null;
 
-        var isValid = BCrypt.Net.BCrypt.Verify(pin, user.PinHash);
+        if (user == null)
+            return new LoginResult { Success = false, Message = "Invalid credentials." };
 
-        return isValid ? user : null;
+        // Check if the account is currently locked out
+        string? lockoutMessage = _loginAttemptService.CheckLockoutStatus(user);
+        if (lockoutMessage != null)
+            return new LoginResult { Success = false, Message = lockoutMessage };
+
+        // Verify the PIN
+        bool pinCorrect = BCrypt.Net.BCrypt.Verify(pin, user.PinHash);
+
+        if (!pinCorrect)
+        {
+            // Record the failure and get the appropriate message
+            string failMessage = await _loginAttemptService.RecordFailedAttemptAsync(user);
+            return new LoginResult { Success = false, Message = failMessage };
+        }
+
+        // Success — reset any lockout counters
+        await _loginAttemptService.RecordSuccessfulLoginAsync(user);
+        return new LoginResult { Success = true, Message = "Login successful.", User = user };
     }
 }

@@ -38,18 +38,18 @@ public class AuthController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var user = await _userService.LoginAsync(request.Username, request.Pin);
-        if (user == null)
-            return Unauthorized("Invalid credentials.");
+        LoginResult result = await _userService.LoginAsync(request.Username, request.Pin);
 
-        // JWT Token creation
-        var token = _jwtService.GenerateToken(user.Id, user.Username);
-        var expiration = DateTime.UtcNow.AddMinutes(60); // match ExpireMinutes in appsettings
+        if (!result.Success)
+            return Unauthorized(new { message = result.Message });
+
+        // Generate JWT token using the authenticated user's ID and username
+        string token = _jwtService.GenerateToken(result.User!.Id, result.User!.Username);
 
         var response = new LoginResponse
         {
             Token = token,
-            Expiration = expiration
+            Expiration = DateTime.UtcNow.AddMinutes(60)
         };
 
         return Ok(response);

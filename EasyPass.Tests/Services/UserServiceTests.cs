@@ -1,6 +1,7 @@
 using EasyPass.API.Services;
 using EasyPass.API.Models;
 using EasyPass.Tests.TestHelpers;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace EasyPass.Tests.Services
@@ -19,7 +20,9 @@ namespace EasyPass.Tests.Services
             // Create a fresh database for each test
             string databaseName = TestDatabaseHelper.GetUniqueDatabaseName(nameof(UserServiceTests));
             _context = TestDatabaseHelper.CreateTestDatabase(databaseName);
-            _userService = new UserService(_context);
+            // LoginAttemptService needs the same context and a no-op logger
+            var loginAttemptService = new LoginAttemptService(_context, new NullLogger<LoginAttemptService>());
+            _userService = new UserService(_context, loginAttemptService);
         }
 
         [Fact]
@@ -86,12 +89,13 @@ namespace EasyPass.Tests.Services
             };
 
             // Act - Try to authenticate
-            User authenticatedUser = await _userService.LoginAsync(loginRequest.Username, loginRequest.Pin);
+            LoginResult result = await _userService.LoginAsync(loginRequest.Username, loginRequest.Pin);
 
             // Assert
-            Assert.NotNull(authenticatedUser);
-            Assert.Equal("testuser", authenticatedUser.Username);
-            Assert.Equal(registeredUser.Id, authenticatedUser.Id);
+            Assert.True(result.Success);
+            Assert.NotNull(result.User);
+            Assert.Equal("testuser", result.User.Username);
+            Assert.Equal(registeredUser.Id, result.User.Id);
         }
 
         [Fact]
@@ -113,10 +117,10 @@ namespace EasyPass.Tests.Services
             };
 
             // Act
-            User result = await _userService.LoginAsync(loginRequest.Username, loginRequest.Pin);
+            LoginResult result = await _userService.LoginAsync(loginRequest.Username, loginRequest.Pin);
 
-            // Assert - Should return null for wrong PIN
-            Assert.Null(result);
+            // Assert - Should fail for wrong PIN
+            Assert.False(result.Success);
         }
 
         [Fact]
@@ -130,10 +134,10 @@ namespace EasyPass.Tests.Services
             };
 
             // Act
-            User result = await _userService.LoginAsync(loginRequest.Username, loginRequest.Pin);
+            LoginResult result = await _userService.LoginAsync(loginRequest.Username, loginRequest.Pin);
 
             // Assert
-            Assert.Null(result);
+            Assert.False(result.Success);
         }
 
         [Fact]
@@ -203,10 +207,10 @@ namespace EasyPass.Tests.Services
             };
 
             // Act
-            User result = await _userService.LoginAsync(loginRequest.Username, loginRequest.Pin);
+            LoginResult result = await _userService.LoginAsync(loginRequest.Username, loginRequest.Pin);
 
             // Assert
-            Assert.Null(result);
+            Assert.False(result.Success);
         }
 
         [Fact]
