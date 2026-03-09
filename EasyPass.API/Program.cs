@@ -18,6 +18,7 @@ builder.Services.AddDbContext<EasyPassContext>(options =>
 
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<LoginAttemptService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
