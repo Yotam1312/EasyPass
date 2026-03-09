@@ -487,6 +487,17 @@ public partial class PasswordsPage : ContentPage
         Application.Current!.MainPage = new NavigationPage(App.GetPage<LoginPage>());
     }
 
+    // Intercepts the Android hardware back button press.
+    // Instead of going back to the login page, we show the logout confirmation.
+    protected override bool OnBackButtonPressed()
+    {
+        // Trigger the same logout flow as the Logout button
+        OnLogoutClicked(this, EventArgs.Empty);
+
+        // Return true to prevent the default back navigation
+        return true;
+    }
+
     private void ShowToast(string message)
     {
         // Create and show the toast message
