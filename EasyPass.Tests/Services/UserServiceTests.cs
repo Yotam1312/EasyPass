@@ -29,7 +29,7 @@ namespace EasyPass.Tests.Services
             var registerRequest = new RegisterRequest
             {
                 Username = "newuser",
-                Pin = "1234"
+                Pin = "123789"
             };
 
             // Act - Register the user
@@ -38,7 +38,7 @@ namespace EasyPass.Tests.Services
             // Assert - Check the user was created
             Assert.NotNull(result);
             Assert.Equal("newuser", result.Username);
-            Assert.NotEqual("1234", result.PinHash); // PIN should be hashed
+            Assert.NotEqual("123789", result.PinHash); // PIN should be hashed
             Assert.True(result.Id > 0); // Should have an ID assigned
         }
 
@@ -49,7 +49,7 @@ namespace EasyPass.Tests.Services
             var firstUser = new RegisterRequest
             {
                 Username = "duplicateuser",
-                Pin = "1234"
+                Pin = "123789"
             };
             await _userService.RegisterAsync(firstUser.Username, firstUser.Pin);
 
@@ -57,7 +57,7 @@ namespace EasyPass.Tests.Services
             var duplicateUser = new RegisterRequest
             {
                 Username = "duplicateuser", // Same username
-                Pin = "5678"
+                Pin = "567890"
             };
 
             // Act
@@ -74,7 +74,7 @@ namespace EasyPass.Tests.Services
             var registerRequest = new RegisterRequest
             {
                 Username = "testuser",
-                Pin = "5555"
+                Pin = "558855"
             };
             User registeredUser = await _userService.RegisterAsync(registerRequest.Username, registerRequest.Pin);
 
@@ -82,7 +82,7 @@ namespace EasyPass.Tests.Services
             var loginRequest = new LoginRequest
             {
                 Username = "testuser",
-                Pin = "5555"
+                Pin = "558855"
             };
 
             // Act - Try to authenticate
@@ -101,7 +101,7 @@ namespace EasyPass.Tests.Services
             var registerRequest = new RegisterRequest
             {
                 Username = "testuser2",
-                Pin = "9999"
+                Pin = "998877"
             };
             await _userService.RegisterAsync(registerRequest.Username, registerRequest.Pin);
 
@@ -109,7 +109,7 @@ namespace EasyPass.Tests.Services
             var loginRequest = new LoginRequest
             {
                 Username = "testuser2",
-                Pin = "1111" // Wrong PIN
+                Pin = "114411" // Wrong PIN
             };
 
             // Act
@@ -126,7 +126,7 @@ namespace EasyPass.Tests.Services
             var loginRequest = new LoginRequest
             {
                 Username = "nonexistentuser",
-                Pin = "1234"
+                Pin = "123789"
             };
 
             // Act
@@ -143,7 +143,7 @@ namespace EasyPass.Tests.Services
             var registerRequest = new RegisterRequest
             {
                 Username = "hashtest",
-                Pin = "7890"
+                Pin = "789012"
             };
 
             // Act
@@ -151,11 +151,11 @@ namespace EasyPass.Tests.Services
 
             // Assert - PIN should be hashed (BCrypt creates 60-character hashes)
             Assert.NotNull(result.PinHash);
-            Assert.NotEqual("7890", result.PinHash);
+            Assert.NotEqual("789012", result.PinHash);
             Assert.True(result.PinHash.Length >= 50); // BCrypt hashes are typically 60+ chars
 
             // Should be able to verify the PIN
-            bool isValidPin = BCrypt.Net.BCrypt.Verify("7890", result.PinHash);
+            bool isValidPin = BCrypt.Net.BCrypt.Verify("789012", result.PinHash);
             Assert.True(isValidPin);
         }
 
@@ -166,7 +166,7 @@ namespace EasyPass.Tests.Services
             var registerRequest = new RegisterRequest
             {
                 Username = "",
-                Pin = "1234"
+                Pin = "123789"
             };
 
             // Act & Assert - This might throw an exception or return null
@@ -191,7 +191,7 @@ namespace EasyPass.Tests.Services
             var registerRequest = new RegisterRequest
             {
                 Username = "emptytest",
-                Pin = "1234"
+                Pin = "123789"
             };
             await _userService.RegisterAsync(registerRequest.Username, registerRequest.Pin);
 
@@ -213,8 +213,8 @@ namespace EasyPass.Tests.Services
         public async Task RegisterAsync_MultipleUsers_ShouldCreateUniqueIds()
         {
             // Arrange
-            var user1Request = new RegisterRequest { Username = "user1", Pin = "1111" };
-            var user2Request = new RegisterRequest { Username = "user2", Pin = "2222" };
+            var user1Request = new RegisterRequest { Username = "user1", Pin = "114411" };
+            var user2Request = new RegisterRequest { Username = "user2", Pin = "224422" };
 
             // Act
             User user1 = await _userService.RegisterAsync(user1Request.Username, user1Request.Pin);

@@ -65,8 +65,8 @@ namespace EasyPass.Tests.Controllers
             // Arrange
             var registerRequest = new RegisterRequest
             {
-                Username = "integrationtest",
-                Pin = "1234"
+                Username = "integrationtest@test.com",
+                Pin = "123789"
             };
 
             var json = JsonSerializer.Serialize(registerRequest);
@@ -79,7 +79,7 @@ namespace EasyPass.Tests.Controllers
             Assert.True(response.IsSuccessStatusCode);
 
             var responseString = await response.Content.ReadAsStringAsync();
-            Assert.Contains("integrationtest", responseString);
+            Assert.Contains("integrationtest@test.com", responseString);
         }
 
         [Fact]
@@ -88,8 +88,8 @@ namespace EasyPass.Tests.Controllers
             // Arrange - First register a user
             var registerRequest = new RegisterRequest
             {
-                Username = "logintest",
-                Pin = "5678"
+                Username = "logintest@test.com",
+                Pin = "567890"
             };
 
             var registerJson = JsonSerializer.Serialize(registerRequest);
@@ -99,8 +99,8 @@ namespace EasyPass.Tests.Controllers
             // Now try to login
             var loginRequest = new LoginRequest
             {
-                Username = "logintest",
-                Pin = "5678"
+                Username = "logintest@test.com",
+                Pin = "567890"
             };
 
             var loginJson = JsonSerializer.Serialize(loginRequest);
@@ -129,8 +129,8 @@ namespace EasyPass.Tests.Controllers
             // Arrange
             var loginRequest = new LoginRequest
             {
-                Username = "nonexistent",
-                Pin = "wrongpin"
+                Username = "nonexistent@test.com",
+                Pin = "wrongpin123"
             };
 
             var json = JsonSerializer.Serialize(loginRequest);
@@ -149,8 +149,8 @@ namespace EasyPass.Tests.Controllers
             // Arrange - Register first user
             var registerRequest1 = new RegisterRequest
             {
-                Username = "duplicatetest",
-                Pin = "1111"
+                Username = "duplicatetest@test.com",
+                Pin = "114411"
             };
 
             var json1 = JsonSerializer.Serialize(registerRequest1);
@@ -160,8 +160,8 @@ namespace EasyPass.Tests.Controllers
             // Try to register same username again
             var registerRequest2 = new RegisterRequest
             {
-                Username = "duplicatetest",
-                Pin = "2222"
+                Username = "duplicatetest@test.com",
+                Pin = "224422"
             };
 
             var json2 = JsonSerializer.Serialize(registerRequest2);
@@ -181,9 +181,24 @@ namespace EasyPass.Tests.Controllers
             var registerRequest = new RegisterRequest
             {
                 Username = "",
-                Pin = "1234"
+                Pin = "123789"
             };
 
+            var json = JsonSerializer.Serialize(registerRequest);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            // Act
+            var response = await _client.PostAsync("/api/auth/register", content);
+
+            // Assert
+            Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Register_WithFiveDigitPin_ShouldReturnBadRequest()
+        {
+            // Arrange - PIN is only 5 digits, should fail min-length validation
+            var registerRequest = new { Username = "test@test.com", Pin = "12345" };
             var json = JsonSerializer.Serialize(registerRequest);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -200,7 +215,7 @@ namespace EasyPass.Tests.Controllers
             // Arrange
             var registerRequest = new RegisterRequest
             {
-                Username = "emptypintest",
+                Username = "emptypintest@test.com",
                 Pin = ""
             };
 

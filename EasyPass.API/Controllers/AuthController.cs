@@ -55,10 +55,3 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 }
-
-// DTOs (Data Transfer Objects)
-public class RegisterRequest
-{
-    public string Username { get; set; } = string.Empty;
-    public string Pin { get; set; } = string.Empty;
-}
