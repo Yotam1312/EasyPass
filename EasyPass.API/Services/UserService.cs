@@ -9,6 +9,15 @@ namespace EasyPass.API.Services;
 
 public class UserService
 {
+    // List of PINs that are too common and should not be allowed
+    private static readonly HashSet<string> WeakPins = new HashSet<string>
+    {
+        "123456", "654321", "234567", "345678", "456789",
+        "000000", "111111", "222222", "333333", "444444",
+        "555555", "666666", "777777", "888888", "999999",
+        "123123", "112233", "121212"
+    };
+
     private readonly EasyPassContext _context;
 
     public UserService(EasyPassContext context)
@@ -19,6 +28,10 @@ public class UserService
     // Registers a new user with a BCrypt-hashed PIN.
     public async Task<User?> RegisterAsync(string username, string pin)
     {
+        // Reject common/weak PINs
+        if (WeakPins.Contains(pin))
+            throw new ArgumentException("PIN is too common. Please choose a more unique PIN.");
+
         // Check if username already exists
         if (await _context.Users.AnyAsync(u => u.Username == username))
             return null;

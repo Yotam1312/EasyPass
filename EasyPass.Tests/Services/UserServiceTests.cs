@@ -228,6 +228,32 @@ namespace EasyPass.Tests.Services
             Assert.True(user2.Id > 0);
         }
 
+        [Theory]
+        [InlineData("123456")]
+        [InlineData("654321")]
+        [InlineData("234567")]
+        [InlineData("345678")]
+        [InlineData("456789")]
+        [InlineData("000000")]
+        [InlineData("111111")]
+        [InlineData("222222")]
+        [InlineData("333333")]
+        [InlineData("444444")]
+        [InlineData("555555")]
+        [InlineData("666666")]
+        [InlineData("777777")]
+        [InlineData("888888")]
+        [InlineData("999999")]
+        [InlineData("123123")]
+        [InlineData("112233")]
+        [InlineData("121212")]
+        public async Task RegisterAsync_WeakPin_ThrowsArgumentException(string weakPin)
+        {
+            // Act & Assert - Weak PINs should be rejected
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _userService.RegisterAsync("test@test.com", weakPin));
+        }
+
         // Clean up after each test
         public void Dispose()
         {
