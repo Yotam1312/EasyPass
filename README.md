@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/easypass_logo.svg" alt="EasyPass Logo" width="400">
+</p>
+
 # EasyPass
 
 A simple, secure, and accessible password manager built with .NET.
