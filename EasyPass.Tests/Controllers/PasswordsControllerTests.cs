@@ -96,7 +96,7 @@ namespace EasyPass.Tests.Controllers
         public async Task GetPasswords_WithValidToken_ShouldReturnEmptyListInitially()
         {
             // Arrange - Get a valid token
-            string token = await RegisterAndLoginAsync("passworduser1", "1234");
+            string token = await RegisterAndLoginAsync("passworduser1@test.com", "123789");
 
             // Set authorization header
             _client.DefaultRequestHeaders.Authorization = 
@@ -119,7 +119,7 @@ namespace EasyPass.Tests.Controllers
         public async Task CreatePassword_WithValidData_ShouldCreatePassword()
         {
             // Arrange
-            string token = await RegisterAndLoginAsync("passworduser2", "5678");
+            string token = await RegisterAndLoginAsync("passworduser2@test.com", "567890");
             _client.DefaultRequestHeaders.Authorization = 
                 new AuthenticationHeaderValue("Bearer", token);
 
@@ -152,7 +152,7 @@ namespace EasyPass.Tests.Controllers
         public async Task GetPasswords_AfterCreatingPassword_ShouldReturnPassword()
         {
             // Arrange
-            string token = await RegisterAndLoginAsync("passworduser3", "9999");
+            string token = await RegisterAndLoginAsync("passworduser3@test.com", "998877");
             _client.DefaultRequestHeaders.Authorization = 
                 new AuthenticationHeaderValue("Bearer", token);
 
@@ -218,7 +218,7 @@ namespace EasyPass.Tests.Controllers
         public async Task UpdatePassword_WithValidData_ShouldUpdatePassword()
         {
             // Arrange
-            string token = await RegisterAndLoginAsync("passworduser4", "1111");
+            string token = await RegisterAndLoginAsync("passworduser4@test.com", "114411");
             _client.DefaultRequestHeaders.Authorization = 
                 new AuthenticationHeaderValue("Bearer", token);
 
@@ -262,7 +262,7 @@ namespace EasyPass.Tests.Controllers
         public async Task SearchPasswords_WithExistingService_ShouldReturnMatchingPasswords()
         {
             // Arrange
-            string token = await RegisterAndLoginAsync("searchuser", "2222");
+            string token = await RegisterAndLoginAsync("searchuser@test.com", "224422");
             _client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);
 
@@ -308,7 +308,7 @@ namespace EasyPass.Tests.Controllers
         public async Task DeletePassword_WithValidToken_ShouldDeletePassword()
         {
             // Arrange - Register a user and create a password to delete
-            string token = await RegisterAndLoginAsync("del_user1@test.com", "1234");
+            string token = await RegisterAndLoginAsync("del_user1@test.com", "123789");
             _client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);
 
@@ -360,7 +360,7 @@ namespace EasyPass.Tests.Controllers
         public async Task DeletePassword_WithValidToken_NonExistentId_ShouldReturnNotFound()
         {
             // Arrange - Register a user (but do not create any passwords)
-            string token = await RegisterAndLoginAsync("del_user2@test.com", "1234");
+            string token = await RegisterAndLoginAsync("del_user2@test.com", "123789");
             _client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);
 
@@ -377,7 +377,7 @@ namespace EasyPass.Tests.Controllers
         public async Task GetPasswords_CrossUser_ShouldNotSeeOtherUserPasswords()
         {
             // Arrange - User A logs in and creates a password
-            string tokenA = await RegisterAndLoginAsync("cross_userA1@test.com", "1111");
+            string tokenA = await RegisterAndLoginAsync("cross_userA1@test.com", "114411");
             _client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", tokenA);
 
@@ -393,7 +393,7 @@ namespace EasyPass.Tests.Controllers
             await _client.PostAsync("/api/passwords", contentA);
 
             // User B logs in (fresh account, no passwords of their own)
-            string tokenB = await RegisterAndLoginAsync("cross_userB1@test.com", "2222");
+            string tokenB = await RegisterAndLoginAsync("cross_userB1@test.com", "224422");
 
             // Act - Switch to User B's token and fetch passwords
             _client.DefaultRequestHeaders.Authorization =
@@ -414,7 +414,7 @@ namespace EasyPass.Tests.Controllers
         public async Task UpdatePassword_CrossUser_ShouldReturnNotFound()
         {
             // Arrange - User A logs in and creates a password
-            string tokenA = await RegisterAndLoginAsync("cross_userA2@test.com", "1111");
+            string tokenA = await RegisterAndLoginAsync("cross_userA2@test.com", "114411");
             _client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", tokenA);
 
@@ -435,7 +435,7 @@ namespace EasyPass.Tests.Controllers
             int passwordId = createdPassword!.Id;
 
             // User B logs in
-            string tokenB = await RegisterAndLoginAsync("cross_userB2@test.com", "2222");
+            string tokenB = await RegisterAndLoginAsync("cross_userB2@test.com", "224422");
 
             // Act - User B tries to update User A's password using the known Id
             _client.DefaultRequestHeaders.Authorization =
@@ -461,7 +461,7 @@ namespace EasyPass.Tests.Controllers
         public async Task DeletePassword_CrossUser_ShouldReturnNotFound()
         {
             // Arrange - User A logs in and creates a password
-            string tokenA = await RegisterAndLoginAsync("cross_userA3@test.com", "1111");
+            string tokenA = await RegisterAndLoginAsync("cross_userA3@test.com", "114411");
             _client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", tokenA);
 
@@ -482,7 +482,7 @@ namespace EasyPass.Tests.Controllers
             int passwordId = createdPassword!.Id;
 
             // User B logs in
-            string tokenB = await RegisterAndLoginAsync("cross_userB3@test.com", "2222");
+            string tokenB = await RegisterAndLoginAsync("cross_userB3@test.com", "224422");
 
             // Act - User B tries to delete User A's password using the known Id
             _client.DefaultRequestHeaders.Authorization =
