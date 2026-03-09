@@ -12,11 +12,12 @@ Built as a cross-platform app using .NET MAUI with a .NET 8 Web API backend (hos
 
 ## Project Status
 
-**🎯 98% Completed**
+**🎯 99% Completed**
 
 ### ✅ **Major Achievements:**
 - **Production Security**: Environment-based configuration, no hardcoded secrets
-- **Comprehensive Testing**: 37 tests with xUnit framework (26 passing, 70% coverage)
+- **PIN Security Hardening**: 6-digit minimum, weak PIN blocking, tiered brute-force lockout
+- **Comprehensive Testing**: 88 tests with xUnit framework (83 passing, 94% pass rate)
 - **Professional Architecture**: Dependency injection, service layer separation
 - **Complete Functionality**: Full CRUD operations with secure authentication
 - **Production Deployment**: Docker containerization with security documentation
@@ -25,12 +26,13 @@ Built as a cross-platform app using .NET MAUI with a .NET 8 Web API backend (hos
 
 | Feature | Description |
 |---------|-------------|
-| **Secure Authentication** | PIN-based login with BCrypt hashing |
+| **Secure Authentication** | PIN-based login with BCrypt hashing (6-digit minimum) |
 | **AES-256 Encryption** | All passwords encrypted before storage |
 | **JWT Tokens** | Secure API communication |
 | **Full CRUD** | Add, edit, delete, search passwords |
 | **Password Generator** | Built-in cryptographically secure generator |
 | **Clipboard Security** | Auto-clears after 30 seconds |
+| **Brute Force Protection** | Tiered lockout: warning → 30s → 5min → permanent |
 | **Session Management** | Auto-logout on token expiration |
 | **Error Handling** | User-friendly messages with retry options |
 | **Password Visibility** | Show/hide toggle for each password |
@@ -75,6 +77,8 @@ EasyPass/
 | **Mobile Storage** | SecureStorage (Keychain/Keystore) |
 | **Clipboard** | Auto-clear after 30 seconds |
 | **Session** | Auto-logout on 401 response |
+| **PIN Hardening** | 6-digit minimum, 18 common PINs blocked |
+| **Brute Force** | Account lockout after 3/5/7/10 failed attempts |
 | **Transport** | HTTPS enforced, SSL database connection |
 
 ### Security Configuration
@@ -115,10 +119,11 @@ export ConnectionStrings__DefaultConnection="your-database-connection-string"
 ## Testing
 
 ### Test Coverage
-- **37 comprehensive tests** with xUnit framework
-- **Unit Tests**: EncryptionHelper (8), JwtService (6), UserService (9)
-- **Integration Tests**: AuthController (6), PasswordsController (8)
-- **Test Results**: 26/37 passing (70%) - Core functionality validated
+- **88 comprehensive tests** with xUnit framework
+- **Unit Tests**: EncryptionHelper (8), JwtService (6), UserService (9), LoginAttemptService (10), UserModel (1)
+- **Integration Tests**: AuthController (7), PasswordsController (8)
+- **Security Tests**: 18 weak PIN tests, 5-digit PIN validation
+- **Test Results**: 83/88 passing (94%) — 5 pre-existing failures in PasswordsController unrelated to auth
 
 ### Running Tests
 ```bash
@@ -178,7 +183,8 @@ dotnet test --verbosity normal
 - Service interfaces for better testability
 - Repository pattern for data access abstraction
 - Structured logging with Serilog
-- API rate limiting and monitoring
+- IP-based rate limiting (account-level lockout already implemented)
+- Email-based account unlock (for permanently locked accounts)
 
 ### Nice-to-Have Features
 
